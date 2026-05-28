@@ -1,0 +1,17 @@
+services:
+  notepad:
+    build: .
+    ports:
+      - "${APP_PORT:-31300}:3000"
+    environment:
+      APP_PASSWORD: ${APP_PASSWORD:-change-me}
+      AUTH_SECRET: ${AUTH_SECRET:-replace-with-at-least-32-random-characters}
+      DATA_DIR: /data
+      MAX_ATTACHMENT_MB: ${MAX_ATTACHMENT_MB:-20}
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
+    volumes:
+      - notepad-data:/data
+    restart: unless-stopped
+
+volumes:
+  notepad-data:

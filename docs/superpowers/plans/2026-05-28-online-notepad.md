@@ -6,7 +6,7 @@
 
 **Architecture:** 使用 Next.js App Router 同时承载 UI 和 API。SQLite 数据库和附件目录放在 `/data` 持久化目录中，API 层通过小型 service 模块访问数据库、鉴权、附件和导入导出逻辑。
 
-**Tech Stack:** Next.js、React、TypeScript、better-sqlite3、zod、jose、archiver、yauzl、vitest、Playwright、Docker Compose。
+**Tech Stack:** Next.js、React、TypeScript、sql.js、zod、jose、archiver、yauzl、vitest、Playwright、Docker Compose。
 
 ---
 
@@ -68,9 +68,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "archiver": "^7.0.1",
-    "better-sqlite3": "^11.9.1",
     "jose": "^5.9.6",
     "lucide-react": "^0.468.0",
     "next": "^15.0.0",
@@ -78,6 +76,7 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.0",
+    "sql.js": "^1.12.0",
     "yauzl": "^3.2.0",
     "zod": "^3.24.1"
   },
@@ -87,6 +86,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
+    "@types/sql.js": "^1.4.9",
     "@types/yauzl": "^2.10.3",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
@@ -179,11 +179,10 @@ schema 必须创建 `notes`、`tags`、`note_tags`、`attachments`、`settings`�
 `src/test/create-test-db.ts` 使用内存数据库：
 
 ```ts
-import Database from "better-sqlite3";
 import { initializeSchema } from "../lib/db";
 
-export function createTestDb() {
-  const db = new Database(":memory:");
+export async function createTestDb() {
+  const db = await createMemoryDb();
   initializeSchema(db);
   return db;
 }
