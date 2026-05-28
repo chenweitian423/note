@@ -5,7 +5,7 @@ import { getUploadsDir } from "@/lib/paths";
 import { requireSession } from "@/lib/require-session";
 
 export async function POST(request: Request) {
-  const unauthorized = await requireSession();
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
 
   const form = await request.formData();

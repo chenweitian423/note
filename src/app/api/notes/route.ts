@@ -10,7 +10,7 @@ const createSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const unauthorized = await requireSession();
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
 
   const url = new URL(request.url);
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const unauthorized = await requireSession();
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
 
   const parsed = createSchema.safeParse(await request.json().catch(() => null));

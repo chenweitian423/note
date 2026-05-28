@@ -4,8 +4,8 @@ import { exportArchive } from "@/lib/export";
 import { getUploadsDir } from "@/lib/paths";
 import { requireSession } from "@/lib/require-session";
 
-export async function GET() {
-  const unauthorized = await requireSession();
+export async function GET(request: Request) {
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
 
   const zip = await exportArchive(await getDb(), getUploadsDir());

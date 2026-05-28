@@ -63,9 +63,19 @@ export function initializeSchema(db: Database): void {
       value text not null
     );
 
+    create table if not exists api_keys (
+      id text primary key,
+      name text not null,
+      keyHash text not null unique,
+      encryptedKey text not null,
+      createdAt text not null,
+      lastUsedAt text
+    );
+
     create index if not exists idx_notes_updatedAt on notes(updatedAt);
     create index if not exists idx_tags_name on tags(name);
     create index if not exists idx_attachments_noteId on attachments(noteId);
+    create index if not exists idx_api_keys_keyHash on api_keys(keyHash);
   `);
 }
 

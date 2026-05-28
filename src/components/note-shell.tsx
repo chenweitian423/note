@@ -4,14 +4,18 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
   Bold,
+  Check,
   Code2,
+  Copy,
   Download,
   FilePlus2,
   Heading1,
   Image,
+  KeyRound,
   Link,
   List,
   LogOut,
+  Trash2,
   Upload
 } from "lucide-react";
 import { MarkdownView } from "@/lib/markdown";
@@ -52,6 +56,14 @@ type Note = {
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
+type ApiKey = {
+  id: string;
+  name: string;
+  key: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+};
+
 function normalizeNote(note: Note): Note {
   return {
     ...note,
@@ -70,6 +82,10 @@ export function NoteShell() {
   const [codeLanguage, setCodeLanguage] = useState("bash");
   const [activeMobilePane, setActiveMobilePane] = useState<"list" | "editor" | "preview">("editor");
   const [importing, setImporting] = useState(false);
+  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [apiKeyName, setApiKeyName] = useState("curl");
+  const [copiedApiKeyId, setCopiedApiKeyId] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectedNote = useMemo(() => notes.find((note) => note.id === selectedId) ?? null, [notes, selectedId]);
   const firstLoad = useRef(true);
@@ -200,6 +216,52 @@ export function NoteShell() {
     event.target.value = "";
   }
 
+  async function openApiKeyDialog() {
+    setApiKeyDialogOpen(true);
+    await loadApiKeys();
+  }
+
+  async function loadApiKeys() {
+    const response = await fetch("/api/api-keys");
+    if (!response.ok) return;
+    const data = (await response.json()) as { apiKeys: ApiKey[] };
+    setApiKeys(data.apiKeys);
+  }
+
+  async function createApiKey() {
+    const response = await fetch("/api/api-keys", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: apiKeyName })
+    });
+    if (!response.ok) return;
+    const data = (await response.json()) as { apiKey: ApiKey };
+    setApiKeys((current) => [data.apiKey, ...current]);
+  }
+
+  async function deleteApiKey(id: string) {
+    await fetch(`/api/api-keys/${id}`, { method: "DELETE" });
+    setApiKeys((current) => current.filter((apiKey) => apiKey.id !== id));
+  }
+
+  async function copyApiKey(apiKey: ApiKey) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(apiKey.key);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = apiKey.key;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+    setCopiedApiKeyId(apiKey.id);
+    window.setTimeout(() => setCopiedApiKeyId(""), 1200);
+  }
+
   return (
     <main className="workspace">
       <aside className={`sidebar ${activeMobilePane === "list" ? "active-pane" : ""}`}>
@@ -209,6 +271,9 @@ export function NoteShell() {
           </button>
           <button title="导出" aria-label="导出" onClick={exportZip}>
             <Download size={18} />
+          </button>
+          <button title="API Key" aria-label="API Key" onClick={openApiKeyDialog}>
+            <KeyRound size={18} />
           </button>
           <label className="icon-button" title="导入" aria-label="导入">
             <Upload size={18} />
@@ -325,6 +390,50 @@ export function NoteShell() {
           ))}
         </div>
       </aside>
+      {apiKeyDialogOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <section className="api-key-dialog" role="dialog" aria-modal="true" aria-label="API Key 管理">
+            <div className="dialog-header">
+              <h2>API Key 管理</h2>
+              <button aria-label="关闭" onClick={() => setApiKeyDialogOpen(false)}>
+                ×
+              </button>
+            </div>
+            <div className="api-key-create">
+              <input
+                aria-label="API Key 名称"
+                value={apiKeyName}
+                onChange={(event) => setApiKeyName(event.target.value)}
+                placeholder="名称，例如 curl"
+              />
+              <button onClick={createApiKey}>创建</button>
+            </div>
+            <div className="api-key-list">
+              {apiKeys.map((apiKey) => (
+                <article key={apiKey.id} className="api-key-item">
+                  <div className="api-key-meta">
+                    <strong>{apiKey.name}</strong>
+                    <span>创建于 {new Date(apiKey.createdAt).toLocaleString("zh-CN")}</span>
+                    {apiKey.lastUsedAt ? (
+                      <span>上次使用 {new Date(apiKey.lastUsedAt).toLocaleString("zh-CN")}</span>
+                    ) : null}
+                  </div>
+                  <code>{apiKey.key}</code>
+                  <div className="api-key-actions">
+                    <button title="复制" aria-label={`复制 ${apiKey.name}`} onClick={() => copyApiKey(apiKey)}>
+                      {copiedApiKeyId === apiKey.id ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                    <button title="删除" aria-label={`删除 ${apiKey.name}`} onClick={() => deleteApiKey(apiKey.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+              {apiKeys.length === 0 ? <p className="status-line">还没有 API Key。</p> : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

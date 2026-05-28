@@ -9,14 +9,14 @@ const schema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/)
 });
 
-export async function GET() {
-  const unauthorized = await requireSession();
+export async function GET(request: Request) {
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
   return NextResponse.json({ tags: listTags(await getDb()) });
 }
 
 export async function POST(request: Request) {
-  const unauthorized = await requireSession();
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
 
   const parsed = schema.safeParse(await request.json().catch(() => null));

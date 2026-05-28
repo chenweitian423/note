@@ -359,6 +359,102 @@ textarea {
   padding: 8px 10px;
 }
 
+.modal-backdrop {
+  align-items: center;
+  background: rgba(17, 23, 20, 0.35);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 20;
+}
+
+.api-key-dialog {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+  max-height: min(720px, calc(100vh - 48px));
+  max-width: 760px;
+  overflow: auto;
+  padding: 18px;
+  width: min(760px, 100%);
+}
+
+.dialog-header,
+.api-key-create,
+.api-key-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.dialog-header {
+  justify-content: space-between;
+}
+
+.dialog-header h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.api-key-create input {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  padding: 10px 12px;
+}
+
+.api-key-create input:focus {
+  border-color: var(--accent);
+}
+
+.api-key-create button {
+  background: var(--accent);
+  color: white;
+  padding: 0 18px;
+  width: auto;
+}
+
+.api-key-list {
+  display: grid;
+  gap: 10px;
+}
+
+.api-key-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.api-key-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.api-key-meta span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.api-key-item code {
+  background: #f3f7f4;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: block;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  padding: 10px;
+}
+
 .empty-state {
   align-items: center;
   display: flex;

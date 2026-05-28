@@ -14,8 +14,8 @@ type Params = {
   params: Promise<{ id: string }>;
 };
 
-export async function GET(_request: Request, { params }: Params) {
-  const unauthorized = await requireSession();
+export async function GET(request: Request, { params }: Params) {
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
 
   const { id } = await params;
@@ -24,7 +24,7 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  const unauthorized = await requireSession();
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
 
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));
@@ -42,8 +42,8 @@ export async function PATCH(request: Request, { params }: Params) {
   return NextResponse.json({ note });
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
-  const unauthorized = await requireSession();
+export async function DELETE(request: Request, { params }: Params) {
+  const unauthorized = await requireSession(request);
   if (unauthorized) return unauthorized;
 
   const { id } = await params;
