@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import initSqlJs, { type Database, type SqlJsStatic } from "sql.js";
+import { nextNoteNumber } from "./notes";
 import { ensureDataDirs, getDbPath } from "./paths";
 
 let sqlModulePromise: Promise<SqlJsStatic> | null = null;
@@ -24,6 +25,7 @@ export function initializeSchema(db: Database): void {
   db.run(`
     create table if not exists notes (
       id text primary key,
+      noteNumber text,
       title text not null,
       slug text not null unique,
       content text not null default '',
@@ -72,11 +74,31 @@ export function initializeSchema(db: Database): void {
       lastUsedAt text
     );
 
-    create index if not exists idx_notes_updatedAt on notes(updatedAt);
     create index if not exists idx_tags_name on tags(name);
     create index if not exists idx_attachments_noteId on attachments(noteId);
     create index if not exists idx_api_keys_keyHash on api_keys(keyHash);
   `);
+  migrateNoteNumbers(db);
+  db.run(`
+    create index if not exists idx_notes_updatedAt on notes(updatedAt);
+    create unique index if not exists idx_notes_noteNumber on notes(noteNumber);
+  `);
+}
+
+function migrateNoteNumbers(db: Database): void {
+  const hasNoteNumber = db
+    .exec("pragma table_info(notes)")?.[0]
+    ?.values.some((row) => row[1] === "noteNumber");
+
+  if (!hasNoteNumber) {
+    db.run("alter table notes add column noteNumber text");
+  }
+
+  const existing = db.exec("select id from notes where noteNumber is null or noteNumber = '' order by createdAt asc");
+  const ids = existing[0]?.values.map((row) => String(row[0])) ?? [];
+  for (const id of ids) {
+    db.run("update notes set noteNumber = ? where id = ?", [nextNoteNumber(db), id]);
+  }
 }
 
 export async function getDb(): Promise<Database> {

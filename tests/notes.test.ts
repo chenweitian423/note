@@ -4,6 +4,7 @@ import {
   createNote,
   createTag,
   getNote,
+  getNoteByNumber,
   listNotes,
   setNoteTags,
   updateNote
@@ -15,9 +16,13 @@ describe("note data access", () => {
     const db = await createTestDb();
     const note = createNote(db, { title: "第一篇", content: "# Hello" });
     expect(note.title).toBe("第一篇");
+    expect(note.noteNumber).toBe("N0001");
+    const secondNote = createNote(db, { title: "第二篇" });
+    expect(secondNote.noteNumber).toBe("N0002");
 
     updateNote(db, note.id, { content: "updated # Hello" });
     expect(getNote(db, note.id)?.content).toBe("updated # Hello");
+    expect(getNoteByNumber(db, "N0001")?.id).toBe(note.id);
 
     const tag = createTag(db, { name: "工作", color: "#2563eb" });
     setNoteTags(db, note.id, [tag.id]);
@@ -25,6 +30,7 @@ describe("note data access", () => {
     expect(listNotes(db, { query: "Hello" })).toHaveLength(1);
 
     archiveNote(db, note.id);
+    archiveNote(db, secondNote.id);
     expect(listNotes(db, { includeArchived: false })).toHaveLength(0);
   });
 });

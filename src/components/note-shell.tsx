@@ -47,6 +47,7 @@ type Attachment = {
 
 type Note = {
   id: string;
+  noteNumber: string;
   title: string;
   content: string;
   updatedAt: string;
@@ -131,9 +132,14 @@ export function NoteShell() {
     const response = await fetch(`/api/notes${params}`);
     if (!response.ok) return;
     const data = (await response.json()) as { notes: Note[] };
-    setNotes(data.notes.map(normalizeNote));
-    if (!selectedId && data.notes[0]) {
-      setSelectedId(data.notes[0].id);
+    const nextNotes = data.notes.map(normalizeNote);
+    setNotes(nextNotes);
+    const requestedNoteNumber = new URLSearchParams(window.location.search).get("note");
+    const requestedNote = requestedNoteNumber
+      ? nextNotes.find((note) => note.noteNumber.toLowerCase() === requestedNoteNumber.toLowerCase())
+      : null;
+    if (!selectedId && (requestedNote ?? nextNotes[0])) {
+      setSelectedId((requestedNote ?? nextNotes[0]).id);
     }
   }
 
@@ -147,8 +153,15 @@ export function NoteShell() {
     const data = (await response.json()) as { note: Note };
     const note = normalizeNote(data.note);
     setNotes((current) => [note, ...current]);
-    setSelectedId(note.id);
+    selectNote(note);
     setActiveMobilePane("editor");
+  }
+
+  function selectNote(note: Note) {
+    setSelectedId(note.id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("note", note.noteNumber);
+    window.history.replaceState(null, "", url.toString());
   }
 
   async function archiveSelectedNote() {
@@ -299,11 +312,14 @@ export function NoteShell() {
               key={note.id}
               className={note.id === selectedId ? "note-item selected" : "note-item"}
               onClick={() => {
-                setSelectedId(note.id);
+                selectNote(note);
                 setActiveMobilePane("editor");
               }}
             >
-              <strong>{note.title}</strong>
+              <strong>
+                <span className="note-number">{note.noteNumber}</span>
+                {note.title}
+              </strong>
               <span>{new Date(note.updatedAt).toLocaleString("zh-CN")}</span>
             </button>
           ))}

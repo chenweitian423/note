@@ -4,6 +4,7 @@ import { all, one, run } from "./sql";
 
 export type Note = {
   id: string;
+  noteNumber: string;
   title: string;
   slug: string;
   content: string;
@@ -69,6 +70,18 @@ export function uniqueSlug(db: Database, title: string, existingId?: string): st
   return candidate;
 }
 
+export function nextNoteNumber(db: Database): string {
+  const rows = all<{ noteNumber: string }>(
+    db,
+    "select noteNumber from notes where noteNumber is not null and noteNumber != ''"
+  );
+  const max = rows.reduce((current, row) => {
+    const match = row.noteNumber.match(/^N(\d+)$/i);
+    return match ? Math.max(current, Number(match[1])) : current;
+  }, 0);
+  return `N${String(max + 1).padStart(4, "0")}`;
+}
+
 export function createNote(
   db: Database,
   input: {
@@ -79,11 +92,13 @@ export function createNote(
     createdAt?: string;
     updatedAt?: string;
     archivedAt?: string | null;
+    noteNumber?: string;
   }
 ): NoteWithMeta {
   const timestamp = input.createdAt ?? now();
   const note: Note = {
     id: input.id ?? id(),
+    noteNumber: input.noteNumber ?? nextNoteNumber(db),
     title: input.title.trim() || "Untitled",
     slug: input.slug ?? uniqueSlug(db, input.title),
     content: input.content ?? "",
@@ -93,14 +108,28 @@ export function createNote(
   };
   run(
     db,
-    "insert into notes (id, title, slug, content, createdAt, updatedAt, archivedAt) values (?, ?, ?, ?, ?, ?, ?)",
-    [note.id, note.title, note.slug, note.content, note.createdAt, note.updatedAt, note.archivedAt]
+    "insert into notes (id, noteNumber, title, slug, content, createdAt, updatedAt, archivedAt) values (?, ?, ?, ?, ?, ?, ?, ?)",
+    [
+      note.id,
+      note.noteNumber,
+      note.title,
+      note.slug,
+      note.content,
+      note.createdAt,
+      note.updatedAt,
+      note.archivedAt
+    ]
   );
   return { ...note, tags: [], attachments: [] };
 }
 
 export function getNote(db: Database, noteId: string): NoteWithMeta | null {
   const note = one<Note>(db, "select * from notes where id = ?", [noteId]);
+  return note ? hydrateNote(db, note) : null;
+}
+
+export function getNoteByNumber(db: Database, noteNumber: string): NoteWithMeta | null {
+  const note = one<Note>(db, "select * from notes where upper(noteNumber) = upper(?)", [noteNumber]);
   return note ? hydrateNote(db, note) : null;
 }
 

@@ -186,6 +186,15 @@ textarea:focus {
   font-size: 13px;
 }
 
+.note-number {
+  color: var(--accent);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 8px;
+  min-width: 46px;
+}
+
 .note-item.selected {
   background: var(--panel);
   border-color: var(--accent);
