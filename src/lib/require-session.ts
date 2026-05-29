@@ -1,12 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { verifyApiKey } from "./api-keys";
-import { getRequiredEnv, readSessionToken, SESSION_COOKIE } from "./auth";
+import { getAuthSecret, readSessionToken, SESSION_COOKIE } from "./auth";
 import { getDb, persistDb } from "./db";
 
 export async function hasSession(): Promise<boolean> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  const result = await readSessionToken(token, getRequiredEnv("AUTH_SECRET"));
+  const result = await readSessionToken(token, getAuthSecret());
   return result.ok;
 }
 
@@ -28,9 +28,41 @@ export async function requireSession(request?: Request): Promise<NextResponse | 
   if (request && (await hasApiKey(request))) {
     return null;
   }
-  return (await hasSession()) ? null : NextResponse.json({ error: "未登录或会话已失效" }, { status: 401 });
+  if (!(await hasSession())) {
+    return NextResponse.json({ error: "未登录或会话已失效" }, { status: 401 });
+  }
+  if (request && isStateChangingMethod(request.method) && !hasSameOrigin(request)) {
+    return NextResponse.json({ error: "请求来源无效" }, { status: 403 });
+  }
+  return null;
 }
 
-export async function requireWebSession(): Promise<NextResponse | null> {
-  return (await hasSession()) ? null : NextResponse.json({ error: "未登录或会话已失效" }, { status: 401 });
+export async function requireWebSession(request?: Request): Promise<NextResponse | null> {
+  if (!(await hasSession())) {
+    return NextResponse.json({ error: "未登录或会话已失效" }, { status: 401 });
+  }
+  if (request && isStateChangingMethod(request.method) && !hasSameOrigin(request)) {
+    return NextResponse.json({ error: "请求来源无效" }, { status: 403 });
+  }
+  return null;
+}
+
+function isStateChangingMethod(method: string): boolean {
+  return !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase());
+}
+
+function hasSameOrigin(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  if (!origin) {
+    return true;
+  }
+  const host = request.headers.get("host");
+  if (!host) {
+    return false;
+  }
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
 }

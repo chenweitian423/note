@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import archiver from "archiver";
 import type { Database } from "sql.js";
+import { safeZipPath } from "./filenames";
 import { listNotes } from "./notes";
 
 export async function exportArchive(db: Database, uploadsDir: string): Promise<Buffer> {
@@ -27,11 +28,11 @@ export async function exportArchive(db: Database, uploadsDir: string): Promise<B
   archive.append(JSON.stringify({ notes }, null, 2), { name: "notes.json" });
 
   for (const note of notes) {
-    archive.append(note.content, { name: `notes/${note.slug || note.id}.md` });
+    archive.append(note.content, { name: safeZipPath("notes", `${note.slug || note.id}.md`) });
     for (const attachment of note.attachments) {
       const filePath = path.join(uploadsDir, attachment.storedName);
       if (fs.existsSync(filePath)) {
-        archive.file(filePath, { name: `attachments/${note.id}/${attachment.filename}` });
+        archive.file(filePath, { name: safeZipPath("attachments", note.id, attachment.filename) });
       }
     }
   }

@@ -3,10 +3,11 @@ import { z } from "zod";
 import { getDb, persistDb } from "@/lib/db";
 import { archiveNote, getNote, updateNote } from "@/lib/notes";
 import { requireSession } from "@/lib/require-session";
+import { noteContentSchema } from "@/lib/validation";
 
 const updateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  content: z.string().optional(),
+  content: noteContentSchema.optional(),
   tagIds: z.array(z.string()).optional()
 });
 

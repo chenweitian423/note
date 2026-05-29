@@ -6,12 +6,36 @@ function secretBytes(secret: string): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-export function getRequiredEnv(name: string): string {
-  const value = process.env[name];
+type EnvSource = Record<string, string | undefined>;
+
+type EnvRules = {
+  disallowValues?: string[];
+  minLength?: number;
+};
+
+export function getRequiredEnv(name: string, rules: EnvRules = {}, source: EnvSource = process.env): string {
+  const value = source[name];
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
+  if (rules.disallowValues?.includes(value)) {
+    throw new Error(`${name} must not use an insecure default value`);
+  }
+  if (rules.minLength && value.length < rules.minLength) {
+    throw new Error(`${name} must be at least ${rules.minLength} characters`);
+  }
   return value;
+}
+
+export function getAppPassword(): string {
+  return getRequiredEnv("APP_PASSWORD", { disallowValues: ["change-me"], minLength: 12 });
+}
+
+export function getAuthSecret(): string {
+  return getRequiredEnv("AUTH_SECRET", {
+    disallowValues: ["replace-with-at-least-32-random-characters"],
+    minLength: 32
+  });
 }
 
 export async function verifyPassword(input: string, expected: string): Promise<boolean> {

@@ -97,7 +97,7 @@
 `.env.example` 内容：
 
 ```text
-APP_PASSWORD=change-me
+APP_PASSWORD=replace-with-a-long-random-password
 AUTH_SECRET=replace-with-at-least-32-random-characters
 APP_PORT=31300
 DATA_DIR=/data

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { getDb, persistDb } from "@/lib/db";
+import { sanitizeFilename } from "@/lib/filenames";
 import { createAttachment, getNote } from "@/lib/notes";
 import { getUploadsDir } from "@/lib/paths";
 import { requireSession } from "@/lib/require-session";
@@ -29,11 +30,12 @@ export async function POST(request: Request) {
 
   const uploadsDir = getUploadsDir();
   fs.mkdirSync(uploadsDir, { recursive: true });
-  const storedName = `${noteId}-${crypto.randomUUID()}-${path.basename(file.name)}`;
+  const filename = sanitizeFilename(file.name);
+  const storedName = `${noteId}-${crypto.randomUUID()}-${path.basename(filename)}`;
   fs.writeFileSync(path.join(uploadsDir, storedName), Buffer.from(await file.arrayBuffer()));
   const attachment = createAttachment(db, {
     noteId,
-    filename: file.name,
+    filename,
     storedName,
     mimeType: file.type || "application/octet-stream",
     size: file.size

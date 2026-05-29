@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createApiKey, listApiKeys } from "@/lib/api-keys";
-import { getRequiredEnv } from "@/lib/auth";
+import { getAuthSecret } from "@/lib/auth";
 import { getDb, persistDb } from "@/lib/db";
 import { requireWebSession } from "@/lib/require-session";
 
@@ -14,11 +14,11 @@ export async function GET() {
   if (unauthorized) return unauthorized;
 
   const db = await getDb();
-  return NextResponse.json({ apiKeys: listApiKeys(db, getRequiredEnv("AUTH_SECRET")) });
+  return NextResponse.json({ apiKeys: listApiKeys(db, getAuthSecret()) });
 }
 
 export async function POST(request: Request) {
-  const unauthorized = await requireWebSession();
+  const unauthorized = await requireWebSession(request);
   if (unauthorized) return unauthorized;
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   const db = await getDb();
-  const apiKey = createApiKey(db, { name: parsed.data.name, secret: getRequiredEnv("AUTH_SECRET") });
+  const apiKey = createApiKey(db, { name: parsed.data.name, secret: getAuthSecret() });
   persistDb(db);
   return NextResponse.json({ apiKey }, { status: 201 });
 }

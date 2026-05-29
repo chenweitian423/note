@@ -8,7 +8,7 @@ type Params = {
 };
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const unauthorized = await requireWebSession();
+  const unauthorized = await requireWebSession(_request);
   if (unauthorized) return unauthorized;
 
   const db = await getDb();

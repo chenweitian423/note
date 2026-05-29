@@ -4,10 +4,12 @@ services:
     ports:
       - "${APP_PORT:-31300}:3000"
     environment:
-      APP_PASSWORD: ${APP_PASSWORD:-change-me}
-      AUTH_SECRET: ${AUTH_SECRET:-replace-with-at-least-32-random-characters}
+      APP_PASSWORD: ${APP_PASSWORD:?APP_PASSWORD is required}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
       DATA_DIR: /data
       MAX_ATTACHMENT_MB: ${MAX_ATTACHMENT_MB:-20}
+      MAX_IMPORT_ZIP_MB: ${MAX_IMPORT_ZIP_MB:-50}
+      MAX_NOTE_CONTENT_BYTES: ${MAX_NOTE_CONTENT_BYTES:-1048576}
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
     volumes:
       - notepad-data:/data

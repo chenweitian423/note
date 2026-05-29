@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { Database } from "sql.js";
 import { z } from "zod";
+import { sanitizeFilename } from "./filenames";
 import { createAttachment, createNote, listNotes, uniqueSlug } from "./notes";
 import { readZipEntries } from "./zip";
 
@@ -74,11 +75,12 @@ export async function importArchive(
     for (const attachment of importedNote.attachments) {
       const entry = byName.get(`attachments/${importedNote.id}/${attachment.filename}`);
       if (!entry) continue;
-      const storedName = `${note.id}-${randomUUID()}-${path.basename(attachment.filename)}`;
+      const filename = sanitizeFilename(attachment.filename);
+      const storedName = `${note.id}-${randomUUID()}-${path.basename(filename)}`;
       fs.writeFileSync(path.join(uploadsDir, storedName), entry);
       createAttachment(db, {
         noteId: note.id,
-        filename: attachment.filename,
+        filename,
         storedName,
         mimeType: attachment.mimeType,
         size: entry.length

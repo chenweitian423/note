@@ -39,4 +39,24 @@ describe("zip export and import", () => {
     expect(imported[0].title).toBe("迁移测试");
     expect(imported[0].attachments).toHaveLength(1);
   });
+  it("sanitizes exported attachment names and enforces zip limits", async () => {
+    const db = await createTestDb();
+    const uploadsDir = tempDir();
+    const note = createNote(db, { title: "zip safety", content: "content" });
+    fs.writeFileSync(path.join(uploadsDir, "stored.txt"), "hello");
+    createAttachment(db, {
+      noteId: note.id,
+      filename: "../evil.txt",
+      storedName: "stored.txt",
+      mimeType: "text/plain",
+      size: 5
+    });
+
+    const zip = await exportArchive(db, uploadsDir);
+    const names = (await readZipEntries(zip)).map((entry) => entry.name);
+    expect(names).toContain(`attachments/${note.id}/evil.txt`);
+    expect(names).not.toContain(`attachments/${note.id}/../evil.txt`);
+    await expect(readZipEntries(zip, { maxEntries: 1 })).rejects.toThrow(/too many/i);
+    await expect(readZipEntries(zip, { maxEntryBytes: 1 })).rejects.toThrow(/too large/i);
+  });
 });

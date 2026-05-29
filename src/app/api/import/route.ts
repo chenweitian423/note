@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, persistDb } from "@/lib/db";
 import { importArchive } from "@/lib/import";
+import { DEFAULT_MAX_IMPORT_ZIP_BYTES, envNumber } from "@/lib/limits";
 import { getUploadsDir } from "@/lib/paths";
 import { requireSession } from "@/lib/require-session";
 
@@ -12,6 +13,10 @@ export async function POST(request: Request) {
   const file = form.get("file");
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "缺少 ZIP 文件" }, { status: 400 });
+  }
+  const maxBytes = envNumber("MAX_IMPORT_ZIP_MB", DEFAULT_MAX_IMPORT_ZIP_BYTES / 1024 / 1024) * 1024 * 1024;
+  if (file.size > maxBytes) {
+    return NextResponse.json({ error: "ZIP 文件过大" }, { status: 400 });
   }
 
   try {
