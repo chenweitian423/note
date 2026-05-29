@@ -7,8 +7,22 @@ import { noteContentSchema } from "../src/lib/validation";
 describe("security safeguards", () => {
   it("rejects placeholder or weak deployment secrets", () => {
     expect(() =>
-      getRequiredEnv("APP_PASSWORD", { disallowValues: ["change-me"], minLength: 12 }, { APP_PASSWORD: "change-me" })
+      getRequiredEnv(
+        "APP_PASSWORD",
+        { disallowValues: ["change-me"], minLength: 8, requireMixedCase: true },
+        { APP_PASSWORD: "change-me" }
+      )
     ).toThrow();
+    expect(() =>
+      getRequiredEnv(
+        "APP_PASSWORD",
+        { minLength: 8, requireMixedCase: true },
+        { APP_PASSWORD: "lowercase" }
+      )
+    ).toThrow();
+    expect(getRequiredEnv("APP_PASSWORD", { minLength: 8, requireMixedCase: true }, { APP_PASSWORD: "Notehome" })).toBe(
+      "Notehome"
+    );
     expect(() =>
       getRequiredEnv(
         "AUTH_SECRET",

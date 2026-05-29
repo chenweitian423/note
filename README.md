@@ -15,7 +15,7 @@ open http://localhost:31300
 ## 环境变量
 
 ```text
-APP_PASSWORD=replace-with-a-long-random-password
+APP_PASSWORD=ReplaceMe
 AUTH_SECRET=replace-with-at-least-32-random-characters
 APP_PORT=31300
 DATA_DIR=/data

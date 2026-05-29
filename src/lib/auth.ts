@@ -10,6 +10,7 @@ type EnvSource = Record<string, string | undefined>;
 
 type EnvRules = {
   disallowValues?: string[];
+  requireMixedCase?: boolean;
   minLength?: number;
 };
 
@@ -24,11 +25,14 @@ export function getRequiredEnv(name: string, rules: EnvRules = {}, source: EnvSo
   if (rules.minLength && value.length < rules.minLength) {
     throw new Error(`${name} must be at least ${rules.minLength} characters`);
   }
+  if (rules.requireMixedCase && (!/[a-z]/.test(value) || !/[A-Z]/.test(value))) {
+    throw new Error(`${name} must include both uppercase and lowercase letters`);
+  }
   return value;
 }
 
 export function getAppPassword(): string {
-  return getRequiredEnv("APP_PASSWORD", { disallowValues: ["change-me"], minLength: 12 });
+  return getRequiredEnv("APP_PASSWORD", { disallowValues: ["change-me"], minLength: 8, requireMixedCase: true });
 }
 
 export function getAuthSecret(): string {
