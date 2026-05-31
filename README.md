@@ -2,6 +2,15 @@
 
 个人自托管 Markdown 在线笔记，支持附件、标签、自动保存，以及 ZIP 导入导出迁移。
 
+## 当前版本
+
+当前版本：`0.4.0`
+
+每次发布都应同步更新版本号和更新内容：
+
+- 仓库内记录：见 [CHANGELOG.md](./CHANGELOG.md)。
+- GitHub 发布说明：以 `CHANGELOG.md` 中对应版本内容为准，发布步骤见 [docs/release-process.md](./docs/release-process.md)。
+
 ## Docker 部署
 
 ```bash
@@ -11,6 +20,8 @@ open http://localhost:31300
 ```
 
 默认宿主机端口是 `31300`，可通过 `.env` 中的 `APP_PORT` 修改。
+
+远程脚本、备份、自动上传笔记等场景可使用 API Key 和 `curl` 操作，完整示例见 [docs/curl-api-usage.md](./docs/curl-api-usage.md)。
 
 ## 环境变量
 

@@ -2,6 +2,8 @@
 
 这份文档用于通过 curl 远程操作在线笔记。示例里不要写真实密钥到仓库，使用时在本机 shell 里临时替换即可。
 
+推荐远程自动化使用 API Key。API Key 需要先在网页登录后创建；创建和删除 API Key 的接口只接受网页登录 session，不接受 API Key 自己管理 API Key。
+
 ## 准备变量
 
 ```bash
@@ -14,6 +16,70 @@ export API_KEY="np_live_xxx"
 ```powershell
 $env:BASE = "http://你的服务器地址:31300"
 $env:API_KEY = "np_live_xxx"
+```
+
+## 登录并创建 API Key
+
+如果还没有 API Key，可以先使用网页登录；也可以临时用 cookie 文件通过 curl 登录后创建。下面示例适合在可信本机执行，不要把真实密码写入脚本仓库。
+
+```bash
+export APP_PASSWORD="你的访问密码"
+
+curl -sS \
+  -c cookies.txt \
+  -H "Content-Type: application/json" \
+  -d "{\"password\":\"$APP_PASSWORD\"}" \
+  "$BASE/api/auth/login"
+
+curl -sS \
+  -b cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"name":"remote-curl"}' \
+  "$BASE/api/api-keys"
+```
+
+PowerShell：
+
+```powershell
+$env:APP_PASSWORD = "你的访问密码"
+
+curl.exe -sS `
+  -c cookies.txt `
+  -H "Content-Type: application/json" `
+  -d "{`"password`":`"$env:APP_PASSWORD`"}" `
+  "$env:BASE/api/auth/login"
+
+curl.exe -sS `
+  -b cookies.txt `
+  -H "Content-Type: application/json" `
+  -d '{"name":"remote-curl"}' `
+  "$env:BASE/api/api-keys"
+```
+
+返回结果里的 `apiKey.key` 就是后续 `Authorization: Bearer ...` 使用的值。
+
+## 列出和删除 API Key
+
+这两个接口也需要网页登录 session：
+
+```bash
+curl -sS -b cookies.txt "$BASE/api/api-keys"
+
+curl -sS \
+  -X DELETE \
+  -b cookies.txt \
+  "$BASE/api/api-keys/API_KEY_ID"
+```
+
+PowerShell：
+
+```powershell
+curl.exe -sS -b cookies.txt "$env:BASE/api/api-keys"
+
+curl.exe -sS `
+  -X DELETE `
+  -b cookies.txt `
+  "$env:BASE/api/api-keys/API_KEY_ID"
 ```
 
 ## 获取笔记列表
@@ -31,6 +97,12 @@ curl.exe -sS `
   -H "Authorization: Bearer $env:API_KEY" `
   "$env:BASE/api/notes"
 ```
+
+可选查询参数：
+
+- `q=关键词`：按标题和正文搜索。
+- `tagId=标签ID`：按标签筛选。
+- `includeArchived=true`：包含已归档笔记。
 
 ## 按编号获取笔记 JSON
 
@@ -152,6 +224,48 @@ curl.exe -sS `
 
 上传成功后会返回附件信息，例如附件名、大小、附件 ID 等。
 
+## 创建标签
+
+```bash
+curl -sS \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"资料","color":"#2563eb"}' \
+  "$BASE/api/tags"
+```
+
+PowerShell：
+
+```powershell
+curl.exe -sS `
+  -H "Authorization: Bearer $env:API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{"name":"资料","color":"#2563eb"}' `
+  "$env:BASE/api/tags"
+```
+
+把标签绑定到笔记时，修改笔记并传入 `tagIds`：
+
+```bash
+curl -sS \
+  -X PATCH \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"tagIds":["标签ID"]}' \
+  "$BASE/api/notes/笔记ID"
+```
+
+## 归档笔记
+
+当前删除接口行为是归档笔记，不会物理删除数据库记录：
+
+```bash
+curl -sS \
+  -X DELETE \
+  -H "Authorization: Bearer $API_KEY" \
+  "$BASE/api/notes/笔记ID"
+```
+
 ## 导出全部笔记和附件
 
 ```bash
@@ -196,5 +310,6 @@ curl.exe -sS `
 - `201`：创建成功，例如新建笔记或上传附件。
 - `400`：请求格式不对，常见于缺少文件、JSON 格式错误、附件超过大小限制。
 - `401`：API Key 缺失、错误或已删除。
+- `403`：网页登录 session 请求来源无效，常见于带了不匹配的 `Origin`。
 - `404`：笔记不存在。
-
+- `429`：登录尝试过多，稍后再试。
