@@ -4,7 +4,7 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.10`
+- 当前版本：`0.4.11`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
 - curl 远程操作：[docs/curl-api-usage.md](./docs/curl-api-usage.md)
@@ -13,14 +13,95 @@
 
 ## Docker 部署
 
-```bash
-cp .env.example .env
-# 修改 .env，至少替换 APP_PASSWORD 和 AUTH_SECRET
-docker compose up -d --build
-open http://localhost:31300
+推荐把配置和代码分开保存，避免发布代码时覆盖密码和密钥：
+
+```text
+/opt/online-notepad/.env
+/opt/online-notepad/app
 ```
 
-默认宿主机端口是 `31300`，可通过 `.env` 中的 `APP_PORT` 修改。镜像使用 Next.js standalone 输出构建，运行层只包含生产启动所需文件。
+### Docker Compose 部署示例
+
+`/opt/online-notepad/.env` 示例：
+
+```dotenv
+APP_PASSWORD=ReplaceMe123
+AUTH_SECRET=replace-with-random-hex-secret
+APP_PORT=31300
+MAX_ATTACHMENT_MB=20
+MAX_IMPORT_ZIP_MB=50
+MAX_NOTE_CONTENT_BYTES=1048576
+SECURE_COOKIES=false
+BACKUP_RETENTION=10
+AUTO_BACKUP_INTERVAL_HOURS=0
+```
+
+生成 `AUTH_SECRET`：
+
+```bash
+openssl rand -hex 32
+```
+
+`/opt/online-notepad/app/docker-compose.yml` 示例：
+
+```yaml
+services:
+  notepad:
+    build: .
+    env_file:
+      - /opt/online-notepad/.env
+    ports:
+      - "31300:3000"
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - notepad-data:/data
+    restart: unless-stopped
+
+volumes:
+  notepad-data:
+```
+
+首次启动：
+
+```bash
+cd /opt/online-notepad/app
+docker compose -p online-notepad up -d --build
+curl -fsS http://127.0.0.1:31300/api/health
+```
+
+常用操作：
+
+```bash
+# 查看状态
+docker compose -p online-notepad ps
+
+# 查看日志
+docker compose -p online-notepad logs -f
+
+# 重启
+docker compose -p online-notepad restart
+
+# 停止
+docker compose -p online-notepad down
+
+# 更新代码后重新构建启动
+docker compose -p online-notepad up -d --build
+```
+
+当前 `sky195` 可直接使用固定部署脚本：
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-sky195.ps1
+```
+
+Bash/WSL/Linux 环境也可使用：
+
+```bash
+rtk bash scripts/deploy-sky195.sh
+```
+
+脚本会同步代码到 `/opt/online-notepad/app`，保留 `/opt/online-notepad/.env`，构建启动后自动检查 `/api/health`。镜像使用 Next.js standalone 输出构建，运行层只包含生产启动所需文件。
 
 ## 远程操作
 

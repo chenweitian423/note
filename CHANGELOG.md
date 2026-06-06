@@ -2,6 +2,10 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.11 - 2026-06-07
+
+- 补充 README 中的 Docker Compose 部署示例，包含 `/opt/online-notepad` 目录结构、`.env`、`docker-compose.yml`、启动、更新、日志和健康检查命令。
+
 ## 0.4.10 - 2026-06-07
 
 - 将线上代码部署目录固定迁移到 `/opt/online-notepad/app`，把 `.env` 保留在 `/opt/online-notepad/.env`，避免发布覆盖配置。
