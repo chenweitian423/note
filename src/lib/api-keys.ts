@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { Database } from "sql.js";
 import { all, one, run } from "./sql";
 
@@ -7,24 +7,25 @@ export type ApiKeyRecord = {
   name: string;
   keyHash: string;
   encryptedKey: string;
+  keySuffix: string;
   createdAt: string;
   lastUsedAt: string | null;
 };
 
-export type ApiKeyView = {
+export type ApiKeySummary = {
   id: string;
   name: string;
-  key: string;
+  keySuffix: string;
   createdAt: string;
   lastUsedAt: string | null;
+};
+
+export type CreatedApiKey = ApiKeySummary & {
+  key: string;
 };
 
 function now(): string {
   return new Date().toISOString();
-}
-
-function encryptionKey(secret: string): Buffer {
-  return createHash("sha256").update(secret).digest();
 }
 
 export function hashApiKey(key: string): string {
@@ -35,49 +36,28 @@ export function generateApiKey(): string {
   return `np_live_${randomBytes(32).toString("base64url")}`;
 }
 
-export function encryptApiKey(key: string, secret: string): string {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", encryptionKey(secret), iv);
-  const encrypted = Buffer.concat([cipher.update(key, "utf8"), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return `${iv.toString("base64url")}.${tag.toString("base64url")}.${encrypted.toString("base64url")}`;
-}
-
-export function decryptApiKey(encryptedKey: string, secret: string): string {
-  const [ivRaw, tagRaw, encryptedRaw] = encryptedKey.split(".");
-  if (!ivRaw || !tagRaw || !encryptedRaw) {
-    throw new Error("API key 密文无效");
-  }
-  const decipher = createDecipheriv("aes-256-gcm", encryptionKey(secret), Buffer.from(ivRaw, "base64url"));
-  decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
-  return Buffer.concat([
-    decipher.update(Buffer.from(encryptedRaw, "base64url")),
-    decipher.final()
-  ]).toString("utf8");
-}
-
-export function createApiKey(db: Database, input: { name: string; secret: string }): ApiKeyView {
+export function createApiKey(db: Database, input: { name: string }): CreatedApiKey {
   const key = generateApiKey();
   const record: ApiKeyRecord = {
     id: randomUUID(),
     name: input.name.trim() || "未命名 API Key",
     keyHash: hashApiKey(key),
-    encryptedKey: encryptApiKey(key, input.secret),
+    encryptedKey: "",
+    keySuffix: key.slice(-6),
     createdAt: now(),
     lastUsedAt: null
   };
   run(
     db,
-    "insert into api_keys (id, name, keyHash, encryptedKey, createdAt, lastUsedAt) values (?, ?, ?, ?, ?, ?)",
-    [record.id, record.name, record.keyHash, record.encryptedKey, record.createdAt, record.lastUsedAt]
+    "insert into api_keys (id, name, keyHash, encryptedKey, keySuffix, createdAt, lastUsedAt) values (?, ?, ?, ?, ?, ?, ?)",
+    [record.id, record.name, record.keyHash, record.encryptedKey, record.keySuffix, record.createdAt, record.lastUsedAt]
   );
-  return toView(record, input.secret);
+  return { ...toSummary(record), key };
 }
 
-export function listApiKeys(db: Database, secret: string): ApiKeyView[] {
-  return all<ApiKeyRecord>(db, "select * from api_keys order by createdAt desc").map((record) =>
-    toView(record, secret)
-  );
+export function listApiKeys(db: Database): ApiKeySummary[] {
+  clearLegacyEncryptedKeys(db);
+  return all<ApiKeyRecord>(db, "select * from api_keys order by createdAt desc").map(toSummary);
 }
 
 export function deleteApiKey(db: Database, id: string): void {
@@ -99,11 +79,15 @@ export function verifyApiKey(db: Database, key: string): boolean {
   return true;
 }
 
-function toView(record: ApiKeyRecord, secret: string): ApiKeyView {
+function clearLegacyEncryptedKeys(db: Database): void {
+  run(db, "update api_keys set encryptedKey = '' where encryptedKey <> ''");
+}
+
+function toSummary(record: ApiKeyRecord): ApiKeySummary {
   return {
     id: record.id,
     name: record.name,
-    key: decryptApiKey(record.encryptedKey, secret),
+    keySuffix: record.keySuffix,
     createdAt: record.createdAt,
     lastUsedAt: record.lastUsedAt
   };

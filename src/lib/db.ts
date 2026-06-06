@@ -69,7 +69,8 @@ export function initializeSchema(db: Database): void {
       id text primary key,
       name text not null,
       keyHash text not null unique,
-      encryptedKey text not null,
+      encryptedKey text not null default '',
+      keySuffix text not null default '',
       createdAt text not null,
       lastUsedAt text
     );
@@ -79,6 +80,7 @@ export function initializeSchema(db: Database): void {
     create index if not exists idx_api_keys_keyHash on api_keys(keyHash);
   `);
   migrateNoteNumbers(db);
+  migrateApiKeyMetadata(db);
   db.run(`
     create index if not exists idx_notes_updatedAt on notes(updatedAt);
     create unique index if not exists idx_notes_noteNumber on notes(noteNumber);
@@ -98,6 +100,14 @@ function migrateNoteNumbers(db: Database): void {
   const ids = existing[0]?.values.map((row) => String(row[0])) ?? [];
   for (const id of ids) {
     db.run("update notes set noteNumber = ? where id = ?", [nextNoteNumber(db), id]);
+  }
+}
+
+function migrateApiKeyMetadata(db: Database): void {
+  const columns = db.exec("pragma table_info(api_keys)")?.[0]?.values.map((row) => String(row[1])) ?? [];
+
+  if (!columns.includes("keySuffix")) {
+    db.run("alter table api_keys add column keySuffix text not null default ''");
   }
 }
 

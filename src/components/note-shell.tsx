@@ -62,9 +62,13 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 type ApiKey = {
   id: string;
   name: string;
-  key: string;
+  keySuffix: string;
   createdAt: string;
   lastUsedAt: string | null;
+};
+
+type CreatedApiKey = ApiKey & {
+  key: string;
 };
 
 type Backup = {
@@ -88,6 +92,16 @@ function normalizeNote(note: Note): Note {
   };
 }
 
+function withoutSecret(apiKey: CreatedApiKey): ApiKey {
+  return {
+    id: apiKey.id,
+    name: apiKey.name,
+    keySuffix: apiKey.keySuffix,
+    createdAt: apiKey.createdAt,
+    lastUsedAt: apiKey.lastUsedAt
+  };
+}
+
 export function NoteShell() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -101,6 +115,7 @@ export function NoteShell() {
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [apiKeyName, setApiKeyName] = useState("curl");
+  const [newApiKey, setNewApiKey] = useState<CreatedApiKey | null>(null);
   const [copiedApiKeyId, setCopiedApiKeyId] = useState("");
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [backups, setBackups] = useState<Backup[]>([]);
@@ -299,8 +314,9 @@ export function NoteShell() {
       body: JSON.stringify({ name: apiKeyName })
     });
     if (!response.ok) return;
-    const data = (await response.json()) as { apiKey: ApiKey };
-    setApiKeys((current) => [data.apiKey, ...current]);
+    const data = (await response.json()) as { apiKey: CreatedApiKey };
+    setNewApiKey(data.apiKey);
+    setApiKeys((current) => [withoutSecret(data.apiKey), ...current]);
   }
 
   async function deleteApiKey(id: string) {
@@ -308,12 +324,12 @@ export function NoteShell() {
     setApiKeys((current) => current.filter((apiKey) => apiKey.id !== id));
   }
 
-  async function copyApiKey(apiKey: ApiKey) {
+  async function copyText(text: string) {
     if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(apiKey.key);
+      await navigator.clipboard.writeText(text);
     } else {
       const textarea = document.createElement("textarea");
-      textarea.value = apiKey.key;
+      textarea.value = text;
       textarea.style.position = "fixed";
       textarea.style.left = "-9999px";
       document.body.appendChild(textarea);
@@ -322,6 +338,10 @@ export function NoteShell() {
       document.execCommand("copy");
       textarea.remove();
     }
+  }
+
+  async function copyNewApiKey(apiKey: CreatedApiKey) {
+    await copyText(apiKey.key);
     setCopiedApiKeyId(apiKey.id);
     window.setTimeout(() => setCopiedApiKeyId(""), 1200);
   }
@@ -596,21 +616,32 @@ export function NoteShell() {
               />
               <button onClick={createApiKey}>创建</button>
             </div>
+            {newApiKey ? (
+              <article className="api-key-item api-key-once">
+                <div className="api-key-meta">
+                  <strong>新 API Key 只显示一次</strong>
+                  <span>请立即复制保存，关闭后只能看到尾号。</span>
+                </div>
+                <code>{newApiKey.key}</code>
+                <div className="api-key-actions">
+                  <button title="复制" aria-label={`复制 ${newApiKey.name}`} onClick={() => copyNewApiKey(newApiKey)}>
+                    {copiedApiKeyId === newApiKey.id ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </article>
+            ) : null}
             <div className="api-key-list">
               {apiKeys.map((apiKey) => (
                 <article key={apiKey.id} className="api-key-item">
                   <div className="api-key-meta">
                     <strong>{apiKey.name}</strong>
+                    <span>尾号 {apiKey.keySuffix || "旧密钥"}</span>
                     <span>创建于 {new Date(apiKey.createdAt).toLocaleString("zh-CN")}</span>
                     {apiKey.lastUsedAt ? (
                       <span>上次使用 {new Date(apiKey.lastUsedAt).toLocaleString("zh-CN")}</span>
                     ) : null}
                   </div>
-                  <code>{apiKey.key}</code>
                   <div className="api-key-actions">
-                    <button title="复制" aria-label={`复制 ${apiKey.name}`} onClick={() => copyApiKey(apiKey)}>
-                      {copiedApiKeyId === apiKey.id ? <Check size={16} /> : <Copy size={16} />}
-                    </button>
                     <button title="删除" aria-label={`删除 ${apiKey.name}`} onClick={() => deleteApiKey(apiKey.id)}>
                       <Trash2 size={16} />
                     </button>

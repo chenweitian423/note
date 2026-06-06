@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createApiKey, listApiKeys } from "@/lib/api-keys";
-import { getAuthSecret } from "@/lib/auth";
 import { getDb, persistDb } from "@/lib/db";
 import { requireWebSession } from "@/lib/require-session";
 
@@ -14,7 +13,9 @@ export async function GET() {
   if (unauthorized) return unauthorized;
 
   const db = await getDb();
-  return NextResponse.json({ apiKeys: listApiKeys(db, getAuthSecret()) });
+  const apiKeys = listApiKeys(db);
+  persistDb(db);
+  return NextResponse.json({ apiKeys });
 }
 
 export async function POST(request: Request) {
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
   }
 
   const db = await getDb();
-  const apiKey = createApiKey(db, { name: parsed.data.name, secret: getAuthSecret() });
+  const apiKey = createApiKey(db, { name: parsed.data.name });
   persistDb(db);
   return NextResponse.json({ apiKey }, { status: 201 });
 }

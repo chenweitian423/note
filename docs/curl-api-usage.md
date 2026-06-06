@@ -56,7 +56,7 @@ curl.exe -sS `
   "$env:BASE/api/api-keys"
 ```
 
-返回结果里的 `apiKey.key` 就是后续 `Authorization: Bearer ...` 使用的值。
+返回结果里的 `apiKey.key` 就是后续 `Authorization: Bearer ...` 使用的值。完整 API Key 只在创建响应里显示一次，后续列表接口只返回尾号和元数据，请创建后立即保存。
 
 ## 列出和删除 API Key
 
