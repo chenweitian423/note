@@ -248,6 +248,10 @@ export function createAttachment(
   return attachment;
 }
 
+export function getAttachment(db: Database, attachmentId: string): Attachment | null {
+  return one<Attachment>(db, "select * from attachments where id = ?", [attachmentId]);
+}
+
 export function listAttachments(db: Database, noteId: string): Attachment[] {
   return all<Attachment>(db, "select * from attachments where noteId = ? order by createdAt asc", [noteId]);
 }

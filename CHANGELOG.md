@@ -2,6 +2,13 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.2 - 2026-06-06
+
+- 新增备份 API，可创建、列出并下载最新 ZIP 备份，备份文件保存在 `/data/exports`。
+- 新增可选定时自动备份，使用 `AUTO_BACKUP_INTERVAL_HOURS` 开启，并通过 `BACKUP_RETENTION` 控制保留数量。
+- 新增附件单文件下载接口，支持通过 curl 直接下载指定附件。
+- 补强部署安全提示，明确 `AUTH_SECRET` 需要替换为随机值。
+
 ## 0.4.1 - 2026-06-06
 
 - 优化 Dockerfile 为多阶段构建，使用 Next.js standalone 输出运行生产服务，并保留 `sql.js` wasm 运行资产。

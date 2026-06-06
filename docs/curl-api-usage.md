@@ -224,6 +224,26 @@ curl.exe -sS `
 
 上传成功后会返回附件信息，例如附件名、大小、附件 ID 等。
 
+## 下载附件
+
+附件下载需要使用附件的 `id`。可以先获取笔记 JSON，从 `note.attachments` 里找到附件 ID：
+
+```bash
+curl -L \
+  -H "Authorization: Bearer $API_KEY" \
+  "$BASE/api/attachments/附件ID/download" \
+  -o attachment-file
+```
+
+PowerShell：
+
+```powershell
+curl.exe -L `
+  -H "Authorization: Bearer $env:API_KEY" `
+  "$env:BASE/api/attachments/附件ID/download" `
+  -o attachment-file
+```
+
 ## 创建标签
 
 ```bash
@@ -284,7 +304,44 @@ curl.exe -L `
   -o online-notepad-backup.zip
 ```
 
-导出的 ZIP 里包含笔记数据和附件文件。当前版本还没有单独下载某个附件的 API，如果要取附件文件，先导出 ZIP。
+导出的 ZIP 里包含笔记数据和附件文件。
+
+## 备份
+
+备份 ZIP 保存在服务器 `/data/exports`。手动创建备份：
+
+```bash
+curl -sS \
+  -X POST \
+  -H "Authorization: Bearer $API_KEY" \
+  "$BASE/api/backups"
+```
+
+列出备份：
+
+```bash
+curl -sS \
+  -H "Authorization: Bearer $API_KEY" \
+  "$BASE/api/backups"
+```
+
+下载最新备份：
+
+```bash
+curl -L \
+  -H "Authorization: Bearer $API_KEY" \
+  "$BASE/api/backups/latest" \
+  -o latest-online-notepad-backup.zip
+```
+
+PowerShell：
+
+```powershell
+curl.exe -L `
+  -H "Authorization: Bearer $env:API_KEY" `
+  "$env:BASE/api/backups/latest" `
+  -o latest-online-notepad-backup.zip
+```
 
 ## 上传 ZIP 导入
 

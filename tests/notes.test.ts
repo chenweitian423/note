@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   archiveNote,
+  createAttachment,
   createNote,
   createTag,
+  getAttachment,
   getNote,
   getNoteByNumber,
   listNotes,
@@ -32,5 +34,20 @@ describe("note data access", () => {
     archiveNote(db, note.id);
     archiveNote(db, secondNote.id);
     expect(listNotes(db, { includeArchived: false })).toHaveLength(0);
+  });
+
+  it("looks up attachments by id", async () => {
+    const db = await createTestDb();
+    const note = createNote(db, { title: "附件", content: "" });
+    const attachment = createAttachment(db, {
+      noteId: note.id,
+      filename: "report.pdf",
+      storedName: "stored-report.pdf",
+      mimeType: "application/pdf",
+      size: 123
+    });
+
+    expect(getAttachment(db, attachment.id)?.filename).toBe("report.pdf");
+    expect(getAttachment(db, "missing")).toBeNull();
   });
 });
