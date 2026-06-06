@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
+import archiver from "archiver";
 import { describe, expect, it } from "vitest";
 import { exportArchive } from "../src/lib/export";
 import { importArchive } from "../src/lib/import";
@@ -10,6 +12,25 @@ import { createTestDb } from "../src/test/create-test-db";
 
 function tempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "online-notepad-"));
+}
+
+async function zipEntries(entries: { name: string; data: Buffer }[]): Promise<Buffer> {
+  const archive = archiver("zip", { zlib: { level: 9 } });
+  const chunks: Buffer[] = [];
+  archive.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+  const done = new Promise<Buffer>((resolve, reject) => {
+    archive.on("end", () => resolve(Buffer.concat(chunks)));
+    archive.on("error", reject);
+  });
+  for (const entry of entries) {
+    archive.append(entry.data, { name: entry.name });
+  }
+  await archive.finalize();
+  return done;
+}
+
+function sha256(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex");
 }
 
 describe("zip export and import", () => {
@@ -27,10 +48,15 @@ describe("zip export and import", () => {
     });
 
     const zip = await exportArchive(db, uploadsDir);
-    const names = (await readZipEntries(zip)).map((entry) => entry.name);
+    const entries = await readZipEntries(zip);
+    const names = entries.map((entry) => entry.name);
     expect(names).toContain("manifest.json");
     expect(names).toContain("notes.json");
     expect(names).toContain(`notes/${note.slug}.md`);
+    const byName = new Map(entries.map((entry) => [entry.name, entry.data]));
+    const manifest = JSON.parse(byName.get("manifest.json")!.toString("utf8"));
+    const notesJson = byName.get("notes.json")!;
+    expect(manifest.checksums.notesJsonSha256).toBe(sha256(notesJson));
 
     const nextDb = await createTestDb();
     await importArchive(nextDb, tempDir(), zip);
@@ -58,5 +84,23 @@ describe("zip export and import", () => {
     expect(names).not.toContain(`attachments/${note.id}/../evil.txt`);
     await expect(readZipEntries(zip, { maxEntries: 1 })).rejects.toThrow(/too many/i);
     await expect(readZipEntries(zip, { maxEntryBytes: 1 })).rejects.toThrow(/too large/i);
+  });
+  it("rejects imports when notes.json checksum does not match the manifest", async () => {
+    const db = await createTestDb();
+    const uploadsDir = tempDir();
+    createNote(db, { title: "signed export", content: "original" });
+
+    const zip = await exportArchive(db, uploadsDir);
+    const entries = await readZipEntries(zip);
+    const tampered = await zipEntries(
+      entries.map((entry) =>
+        entry.name === "notes.json"
+          ? { ...entry, data: Buffer.from(JSON.stringify({ notes: [] }), "utf8") }
+          : entry
+      )
+    );
+
+    const nextDb = await createTestDb();
+    await expect(importArchive(nextDb, tempDir(), tampered)).rejects.toThrow(/checksum/i);
   });
 });

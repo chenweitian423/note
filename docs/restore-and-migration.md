@@ -58,6 +58,7 @@ curl -sS \
 ```
 
 导入不会覆盖已有笔记；如果 ID 或 slug 冲突，会生成新的 ID 和唯一 slug。
+新版本导出的 ZIP 会在 `manifest.json` 中包含 `checksums.notesJsonSha256`；导入时如果发现 `notes.json` 与该校验值不匹配，会拒绝导入。旧版本没有 checksum 的 ZIP 仍可导入。
 
 ## 迁移到新服务器
 

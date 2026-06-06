@@ -2,6 +2,12 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.7 - 2026-06-06
+
+- 导出和备份 ZIP 的 `manifest.json` 新增 `checksums.notesJsonSha256`，记录 `notes.json` 的 SHA-256 校验值。
+- 导入 ZIP 时会校验 `notes.json` 内容是否与 manifest 中的 checksum 匹配，发现篡改或损坏会拒绝导入。
+- 保持向后兼容：旧版本未带 checksum 的导出 ZIP 仍可按原流程导入。
+
 ## 0.4.6 - 2026-06-06
 
 - Web 备份管理新增“导入备份 ZIP”入口，可直接上传本应用导出的备份 ZIP 进行恢复/导入。

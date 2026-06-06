@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { Database } from "sql.js";
 import { z } from "zod";
+import { sha256Hex } from "./checksum";
 import { sanitizeFilename } from "./filenames";
 import { createAttachment, createNote, listNotes, uniqueSlug } from "./notes";
 import { readZipEntries } from "./zip";
@@ -12,7 +13,12 @@ const manifestSchema = z.object({
   app: z.string().optional(),
   exportedAt: z.string(),
   noteCount: z.number(),
-  attachmentCount: z.number()
+  attachmentCount: z.number(),
+  checksums: z
+    .object({
+      notesJsonSha256: z.string().regex(/^[a-f0-9]{64}$/)
+    })
+    .optional()
 });
 
 const attachmentSchema = z.object({
@@ -54,7 +60,10 @@ export async function importArchive(
     throw new Error("ZIP 缺少 manifest.json 或 notes.json");
   }
 
-  manifestSchema.parse(JSON.parse(manifestRaw.toString("utf8")));
+  const manifest = manifestSchema.parse(JSON.parse(manifestRaw.toString("utf8")));
+  if (manifest.checksums?.notesJsonSha256 && sha256Hex(notesRaw) !== manifest.checksums.notesJsonSha256) {
+    throw new Error("notes.json checksum mismatch");
+  }
   const parsed = notesSchema.parse(JSON.parse(notesRaw.toString("utf8")));
   fs.mkdirSync(uploadsDir, { recursive: true });
 
