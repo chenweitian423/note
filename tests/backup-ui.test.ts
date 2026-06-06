@@ -23,4 +23,13 @@ describe("backup manager ui", () => {
     expect(topbar).not.toContain('aria-label="API Key"');
     expect(topbar).not.toContain('aria-label="导入"');
   });
+
+  it("keeps modal action buttons readable in narrow dialogs", () => {
+    const css = fs.readFileSync(path.join(process.cwd(), "src/app/globals.css"), "utf8");
+
+    expect(css).toContain("white-space: nowrap");
+    expect(css).toContain("width: auto");
+    expect(css).toContain(".settings-actions .text-action");
+    expect(css).toContain(".api-key-actions .text-action");
+  });
 });

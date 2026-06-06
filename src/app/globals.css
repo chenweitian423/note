@@ -405,8 +405,12 @@ textarea {
 }
 
 .text-action {
+  flex: 0 0 auto;
+  gap: 6px;
   height: 36px;
   padding: 0 14px;
+  white-space: nowrap;
+  width: auto;
 }
 
 .attachment-download:hover,
@@ -445,6 +449,7 @@ textarea {
 .api-key-actions {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -497,6 +502,11 @@ textarea {
 .api-key-meta {
   display: grid;
   gap: 4px;
+  min-width: 0;
+}
+
+.api-key-meta strong {
+  overflow-wrap: anywhere;
 }
 
 .api-key-meta span {
@@ -545,6 +555,14 @@ textarea {
   gap: 6px;
   padding: 0 14px;
   width: auto;
+}
+
+.api-key-create .text-action,
+.api-key-actions .text-action,
+.settings-actions .text-action,
+.settings-actions button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .empty-state {
