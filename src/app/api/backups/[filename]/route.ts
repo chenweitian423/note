@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { NextResponse } from "next/server";
-import { getBackupByFilename } from "@/lib/backup";
+import { deleteBackupByFilename, getBackupByFilename } from "@/lib/backup";
 import { getExportsDir } from "@/lib/paths";
 import { requireSession } from "@/lib/require-session";
 
@@ -25,4 +25,16 @@ export async function GET(request: Request, { params }: Params) {
       "content-length": String(backup.size)
     }
   });
+}
+
+export async function DELETE(request: Request, { params }: Params) {
+  const unauthorized = await requireSession(request);
+  if (unauthorized) return unauthorized;
+
+  const { filename } = await params;
+  if (!deleteBackupByFilename(getExportsDir(), filename)) {
+    return NextResponse.json({ error: "备份不存在" }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true });
 }

@@ -21,11 +21,12 @@
 
 ```bash
 rtk npm run test
+rtk npm run e2e
 rtk npm run build
 rtk docker compose config
 ```
 
-如果本机没有 Node/npm/docker，可按 `AGENTS.md` 约定使用远端 `sky195` 环境验证。
+Playwright E2E 发布验证固定使用官方镜像 `mcr.microsoft.com/playwright:v1.60.0-noble`。如果本机没有 Node/npm/docker，可按 `AGENTS.md` 约定使用远端 `sky195` 环境验证。
 
 ## GitHub 发布说明
 
@@ -48,6 +49,7 @@ rtk git push origin v0.4.4
 ## 验证
 
 - rtk npm run test
+- rtk npm run e2e
 - rtk npm run build
 - rtk docker compose config
 ```

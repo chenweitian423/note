@@ -313,6 +313,17 @@ export function NoteShell() {
     setBackupStatus("备份已创建");
   }
 
+  async function deleteBackupArchive(backup: Backup) {
+    if (!window.confirm(`确定删除备份 ${backup.filename}？`)) return;
+    const response = await fetch(`/api/backups/${encodeURIComponent(backup.filename)}`, { method: "DELETE" });
+    if (!response.ok) {
+      setBackupStatus("删除备份失败");
+      return;
+    }
+    setBackups((current) => current.filter((item) => item.filename !== backup.filename));
+    setBackupStatus("备份已删除");
+  }
+
   async function openApiKeyDialog() {
     setApiKeyDialogOpen(true);
     await loadApiKeys();
@@ -380,19 +391,9 @@ export function NoteShell() {
           <button title="导出" aria-label="导出" onClick={exportZip}>
             <Download size={18} />
           </button>
-          <button title="备份" aria-label="备份管理" onClick={openBackupDialog}>
-            <Database size={18} />
-          </button>
-          <button title="API Key" aria-label="API Key" onClick={openApiKeyDialog}>
-            <KeyRound size={18} />
-          </button>
           <button title="设置" aria-label="设置和状态" onClick={openSettingsDialog}>
             <Settings size={18} />
           </button>
-          <label className="icon-button" title="导入" aria-label="导入">
-            <Upload size={18} />
-            <input type="file" accept=".zip,application/zip" onChange={importZip} />
-          </label>
           <button title="退出登录" aria-label="退出登录" onClick={logout}>
             <LogOut size={18} />
           </button>
@@ -544,9 +545,18 @@ export function NoteShell() {
                       {new Date(backup.createdAt).toLocaleString("zh-CN")} · {formatBytes(backup.size)}
                     </span>
                   </div>
-                  <a className="text-action" href={`/api/backups/${encodeURIComponent(backup.filename)}`}>
-                    下载这份备份
-                  </a>
+                  <div className="api-key-actions">
+                    <a className="text-action" href={`/api/backups/${encodeURIComponent(backup.filename)}`}>
+                      下载这份备份
+                    </a>
+                    <button
+                      className="text-action"
+                      aria-label={`删除 ${backup.filename}`}
+                      onClick={() => deleteBackupArchive(backup)}
+                    >
+                      删除这份备份
+                    </button>
+                  </div>
                 </article>
               ))}
               {backups.length === 0 ? <p className="status-line">还没有备份。</p> : null}
@@ -608,6 +618,11 @@ export function NoteShell() {
                 <Database size={16} />
                 备份管理
               </button>
+              <label className="text-action backup-restore-action" aria-label="导入 ZIP">
+                <Upload size={16} />
+                导入 ZIP
+                <input type="file" accept=".zip,application/zip" onChange={importZip} />
+              </label>
               <a
                 className="text-action"
                 href="https://github.com/chenweitian423/note/blob/master/docs/curl-api-usage.md"

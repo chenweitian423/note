@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createBackup, getBackupByFilename, getLatestBackup, listBackups } from "../src/lib/backup";
+import { createBackup, deleteBackupByFilename, getBackupByFilename, getLatestBackup, listBackups } from "../src/lib/backup";
 import { createNote } from "../src/lib/notes";
 import { readZipEntries } from "../src/lib/zip";
 import { createTestDb } from "../src/test/create-test-db";
@@ -77,5 +77,24 @@ describe("backup archives", () => {
     expect(getBackupByFilename(exportsDir, backup.filename)?.filename).toBe(backup.filename);
     expect(getBackupByFilename(exportsDir, "../app.db")).toBeNull();
     expect(getBackupByFilename(exportsDir, "not-a-backup.zip")).toBeNull();
+  });
+
+  it("deletes backup files by safe filename only", async () => {
+    const db = await createTestDb();
+    const uploadsDir = tempDir();
+    const exportsDir = tempDir();
+    createNote(db, { title: "delete backup", content: "content" });
+
+    const backup = await createBackup(db, {
+      uploadsDir,
+      exportsDir,
+      now: () => new Date("2026-06-06T05:00:00.000Z")
+    });
+
+    expect(deleteBackupByFilename(exportsDir, "../app.db")).toBe(false);
+    expect(deleteBackupByFilename(exportsDir, "not-a-backup.zip")).toBe(false);
+    expect(deleteBackupByFilename(exportsDir, backup.filename)).toBe(true);
+    expect(fs.existsSync(backup.path)).toBe(false);
+    expect(deleteBackupByFilename(exportsDir, backup.filename)).toBe(false);
   });
 });

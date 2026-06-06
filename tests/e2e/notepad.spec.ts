@@ -19,7 +19,10 @@ test("backup manager exposes zip restore upload", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("访问密码").fill("E2ePassword123");
   await page.getByRole("button", { name: "登录" }).click();
-  await page.getByRole("button", { name: "备份管理" }).click();
+  await page.getByRole("button", { name: "设置和状态" }).click();
+
+  const settingsDialog = page.getByRole("dialog", { name: "设置和状态" });
+  await settingsDialog.getByRole("button", { name: "备份管理" }).click();
 
   const backupDialog = page.getByRole("dialog", { name: "备份管理" });
   await expect(backupDialog).toBeVisible();

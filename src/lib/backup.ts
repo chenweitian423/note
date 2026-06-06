@@ -64,6 +64,15 @@ export function getBackupByFilename(exportsDir: string, filename: string): Backu
   return toBackupInfo(filePath);
 }
 
+export function deleteBackupByFilename(exportsDir: string, filename: string): boolean {
+  const backup = getBackupByFilename(exportsDir, filename);
+  if (!backup) {
+    return false;
+  }
+  fs.unlinkSync(backup.path);
+  return true;
+}
+
 function pruneBackups(exportsDir: string, retention: number): void {
   if (retention <= 0) {
     return;

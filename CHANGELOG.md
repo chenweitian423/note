@@ -2,6 +2,12 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.8 - 2026-06-06
+
+- 备份管理新增单项删除入口，可从 Web 界面删除不再需要的历史备份 ZIP。
+- 顶部工具栏瘦身为新建、导出、设置和退出，API Key、备份管理和导入 ZIP 入口移入设置弹窗。
+- 新增 Playwright 1.60 GitHub Actions 验证流程，并把 `mcr.microsoft.com/playwright:v1.60.0-noble` 写入发布验证流程。
+
 ## 0.4.7 - 2026-06-06
 
 - 导出和备份 ZIP 的 `manifest.json` 新增 `checksums.notesJsonSha256`，记录 `notes.json` 的 SHA-256 校验值。
