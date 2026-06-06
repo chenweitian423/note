@@ -28,6 +28,29 @@ rtk docker compose config
 
 Playwright E2E 发布验证固定使用官方镜像 `mcr.microsoft.com/playwright:v1.60.0-noble`。如果本机没有 Node/npm/docker，可按 `AGENTS.md` 约定使用远端 `sky195` 环境验证。
 
+## sky195 固定部署
+
+线上固定配置路径：
+
+```text
+/opt/online-notepad/.env
+/opt/online-notepad/app
+```
+
+发布到 `sky195` 时使用仓库脚本：
+
+```bash
+rtk bash scripts/deploy-sky195.sh
+```
+
+Windows PowerShell 环境可使用：
+
+```powershell
+rtk powershell -ExecutionPolicy Bypass -File scripts/deploy-sky195.ps1
+```
+
+脚本会把代码同步到 `/opt/online-notepad/app`，排除 `.env`、`node_modules`、`.next` 和测试产物，然后执行 `docker compose -p online-notepad up -d --build` 与 `/api/health` 健康检查。
+
 ## GitHub 发布说明
 
 推送 `v*` tag 后，`.github/workflows/release.yml` 会自动创建 GitHub Release。Release 正文来自 `CHANGELOG.md` 中对应版本的小节内容。
