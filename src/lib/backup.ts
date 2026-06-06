@@ -52,6 +52,18 @@ export function getLatestBackup(exportsDir: string): BackupInfo | null {
   return listBackups(exportsDir)[0] ?? null;
 }
 
+export function getBackupByFilename(exportsDir: string, filename: string): BackupInfo | null {
+  if (!isBackupFilename(filename)) {
+    return null;
+  }
+  const resolvedExportsDir = path.resolve(exportsDir);
+  const filePath = path.resolve(resolvedExportsDir, filename);
+  if (!filePath.startsWith(`${resolvedExportsDir}${path.sep}`) || !fs.existsSync(filePath)) {
+    return null;
+  }
+  return toBackupInfo(filePath);
+}
+
 function pruneBackups(exportsDir: string, retention: number): void {
   if (retention <= 0) {
     return;
@@ -59,6 +71,14 @@ function pruneBackups(exportsDir: string, retention: number): void {
   for (const backup of listBackups(exportsDir).slice(retention)) {
     fs.unlinkSync(backup.path);
   }
+}
+
+function isBackupFilename(filename: string): boolean {
+  return (
+    path.basename(filename) === filename &&
+    filename.startsWith(BACKUP_PREFIX) &&
+    filename.endsWith(BACKUP_SUFFIX)
+  );
 }
 
 function toBackupInfo(filePath: string): BackupInfo {

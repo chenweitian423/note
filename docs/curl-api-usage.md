@@ -334,6 +334,15 @@ curl -L \
   -o latest-online-notepad-backup.zip
 ```
 
+下载指定备份：
+
+```bash
+curl -L \
+  -H "Authorization: Bearer $API_KEY" \
+  "$BASE/api/backups/备份文件名.zip" \
+  -o online-notepad-backup.zip
+```
+
 PowerShell：
 
 ```powershell

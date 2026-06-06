@@ -4,10 +4,11 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.3`
+- 当前版本：`0.4.4`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
 - curl 远程操作：[docs/curl-api-usage.md](./docs/curl-api-usage.md)
+- 恢复与迁移：[docs/restore-and-migration.md](./docs/restore-and-migration.md)
 - 默认访问地址：`http://localhost:31300`
 
 ## Docker 部署
@@ -33,15 +34,18 @@ open http://localhost:31300
 - 手动创建：`POST /api/backups`
 - 列出备份：`GET /api/backups`
 - 下载最新备份：`GET /api/backups/latest`
+- 下载指定备份：`GET /api/backups/<filename>`
 - 定时备份：设置 `AUTO_BACKUP_INTERVAL_HOURS` 为大于 `0` 的小时数。
 - 保留数量：通过 `BACKUP_RETENTION` 设置，默认保留最近 `10` 份。
+
+恢复和迁移步骤见 [docs/restore-and-migration.md](./docs/restore-and-migration.md)。
 
 ## 版本发布
 
 每次发布都应同步更新版本号和更新内容：
 
 - 仓库内记录：更新 [CHANGELOG.md](./CHANGELOG.md)。
-- 版本 tag：使用 `v` 前缀，例如 `v0.4.3`。
+- 版本 tag：使用 `v` 前缀，例如 `v0.4.4`。
 - GitHub Release：推送 `v*` tag 后由 GitHub Actions 自动创建，正文来自 `CHANGELOG.md` 对应版本小节。
 
 手动发布细节见 [docs/release-process.md](./docs/release-process.md)。

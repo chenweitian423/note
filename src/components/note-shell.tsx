@@ -16,6 +16,7 @@ import {
   Link,
   List,
   LogOut,
+  Settings,
   Trash2,
   Upload
 } from "lucide-react";
@@ -72,6 +73,13 @@ type Backup = {
   createdAt: string;
 };
 
+type HealthStatus = {
+  ok: boolean;
+  version: string;
+  checkedAt: string;
+  checks: Record<string, boolean>;
+};
+
 function normalizeNote(note: Note): Note {
   return {
     ...note,
@@ -97,6 +105,8 @@ export function NoteShell() {
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [backups, setBackups] = useState<Backup[]>([]);
   const [backupStatus, setBackupStatus] = useState("");
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [health, setHealth] = useState<HealthStatus | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectedNote = useMemo(() => notes.find((note) => note.id === selectedId) ?? null, [notes, selectedId]);
   const firstLoad = useRef(true);
@@ -244,6 +254,13 @@ export function NoteShell() {
     await loadBackups();
   }
 
+  async function openSettingsDialog() {
+    setSettingsDialogOpen(true);
+    const response = await fetch("/api/health");
+    if (!response.ok) return;
+    setHealth((await response.json()) as HealthStatus);
+  }
+
   async function loadBackups() {
     const response = await fetch("/api/backups");
     if (!response.ok) return;
@@ -330,6 +347,9 @@ export function NoteShell() {
           </button>
           <button title="API Key" aria-label="API Key" onClick={openApiKeyDialog}>
             <KeyRound size={18} />
+          </button>
+          <button title="设置" aria-label="设置和状态" onClick={openSettingsDialog}>
+            <Settings size={18} />
           </button>
           <label className="icon-button" title="导入" aria-label="导入">
             <Upload size={18} />
@@ -482,9 +502,78 @@ export function NoteShell() {
                       {new Date(backup.createdAt).toLocaleString("zh-CN")} · {formatBytes(backup.size)}
                     </span>
                   </div>
+                  <a className="text-action" href={`/api/backups/${encodeURIComponent(backup.filename)}`}>
+                    下载这份备份
+                  </a>
                 </article>
               ))}
               {backups.length === 0 ? <p className="status-line">还没有备份。</p> : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
+      {settingsDialogOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <section className="api-key-dialog" role="dialog" aria-modal="true" aria-label="设置和状态">
+            <div className="dialog-header">
+              <h2>设置和状态</h2>
+              <button aria-label="关闭" onClick={() => setSettingsDialogOpen(false)}>
+                ×
+              </button>
+            </div>
+            <div className="settings-grid">
+              <div>
+                <span>当前版本</span>
+                <strong>{health?.version ?? "读取中..."}</strong>
+              </div>
+              <div>
+                <span>健康状态</span>
+                <strong>{health?.ok ? "正常" : health ? "异常" : "读取中..."}</strong>
+              </div>
+              <div>
+                <span>检查时间</span>
+                <strong>{health ? new Date(health.checkedAt).toLocaleString("zh-CN") : "读取中..."}</strong>
+              </div>
+            </div>
+            {health ? (
+              <div className="api-key-list">
+                {Object.entries(health.checks).map(([name, ok]) => (
+                  <article key={name} className="api-key-item compact">
+                    <div className="api-key-meta">
+                      <strong>{name}</strong>
+                      <span>{ok ? "可写" : "不可写"}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+            <div className="settings-actions">
+              <button
+                onClick={() => {
+                  setSettingsDialogOpen(false);
+                  void openApiKeyDialog();
+                }}
+              >
+                <KeyRound size={16} />
+                API Key
+              </button>
+              <button
+                onClick={() => {
+                  setSettingsDialogOpen(false);
+                  void openBackupDialog();
+                }}
+              >
+                <Database size={16} />
+                备份管理
+              </button>
+              <a
+                className="text-action"
+                href="https://github.com/chenweitian423/note/blob/master/docs/curl-api-usage.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                curl 文档
+              </a>
             </div>
           </section>
         </div>

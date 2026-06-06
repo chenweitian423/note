@@ -481,6 +481,10 @@ textarea {
   padding: 12px;
 }
 
+.api-key-item.compact {
+  padding: 10px 12px;
+}
+
 .api-key-meta {
   display: grid;
   gap: 4px;
@@ -500,6 +504,38 @@ textarea {
   font-size: 13px;
   overflow-wrap: anywhere;
   padding: 10px;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.settings-grid div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.settings-grid span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.settings-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-actions button {
+  gap: 6px;
+  padding: 0 14px;
+  width: auto;
 }
 
 .empty-state {
