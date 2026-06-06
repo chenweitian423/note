@@ -160,6 +160,15 @@ textarea:focus {
   display: none;
 }
 
+.backup-restore-action {
+  cursor: pointer;
+  position: relative;
+}
+
+.backup-restore-action input {
+  display: none;
+}
+
 .note-list {
   display: grid;
   gap: 8px;

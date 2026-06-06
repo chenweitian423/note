@@ -12,7 +12,7 @@ export default defineConfig({
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     env: {
-      APP_PASSWORD: "change-me",
+      APP_PASSWORD: "E2ePassword123",
       AUTH_SECRET: "test-secret-at-least-32-characters-long",
       DATA_DIR: ".test-data/e2e"
     }

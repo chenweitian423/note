@@ -4,7 +4,7 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.5`
+- 当前版本：`0.4.6`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
 - curl 远程操作：[docs/curl-api-usage.md](./docs/curl-api-usage.md)
@@ -35,6 +35,7 @@ open http://localhost:31300
 - 列出备份：`GET /api/backups`
 - 下载最新备份：`GET /api/backups/latest`
 - 下载指定备份：`GET /api/backups/<filename>`
+- 网页恢复：在备份管理中点击“导入备份 ZIP”，上传本应用导出的 ZIP。
 - 定时备份：设置 `AUTO_BACKUP_INTERVAL_HOURS` 为大于 `0` 的小时数。
 - 保留数量：通过 `BACKUP_RETENTION` 设置，默认保留最近 `10` 份。
 

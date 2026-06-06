@@ -247,10 +247,28 @@ export function NoteShell() {
     setImporting(true);
     const form = new FormData();
     form.set("file", file);
-    await fetch("/api/import", { method: "POST", body: form });
+    const response = await fetch("/api/import", { method: "POST", body: form });
     setImporting(false);
+    if (!response.ok) return;
     await loadNotes("");
     event.target.value = "";
+  }
+
+  async function restoreBackupZip(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setBackupStatus("正在导入备份 ZIP...");
+    const form = new FormData();
+    form.set("file", file);
+    const response = await fetch("/api/import", { method: "POST", body: form });
+    event.target.value = "";
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      setBackupStatus(data?.error ? `导入失败：${data.error}` : "导入失败");
+      return;
+    }
+    await loadNotes("");
+    setBackupStatus("备份 ZIP 已导入");
   }
 
   async function uploadAttachment(event: ChangeEvent<HTMLInputElement>) {
@@ -511,6 +529,10 @@ export function NoteShell() {
               <a className="text-action" href="/api/backups/latest">
                 下载最新备份
               </a>
+              <label className="text-action backup-restore-action" aria-label="导入备份 ZIP">
+                导入备份 ZIP
+                <input type="file" accept=".zip,application/zip" onChange={restoreBackupZip} />
+              </label>
               {backupStatus ? <span className="status-line">{backupStatus}</span> : null}
             </div>
             <div className="api-key-list">
