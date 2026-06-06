@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 import initSqlJs from "sql.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { all } from "../src/lib/sql";
 import { createTestDb } from "../src/test/create-test-db";
-import { initializeSchema } from "../src/lib/db";
+import { initializeSchema, writeDatabaseFile } from "../src/lib/db";
+
+function tempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "online-notepad-db-"));
+}
 
 describe("database schema", () => {
   it("creates required tables", async () => {
@@ -43,5 +50,25 @@ describe("database schema", () => {
 
     const notes = all<{ id: string; noteNumber: string }>(db, "select id, noteNumber from notes");
     expect(notes).toEqual([{ id: "legacy-1", noteNumber: "N0001" }]);
+  });
+
+  it("writes database files atomically without leaving temp files", async () => {
+    const dir = tempDir();
+    const dbPath = path.join(dir, "app.db");
+    const db = await createTestDb();
+    db.run("insert into settings (key, value) values ('health', 'ok')");
+
+    writeDatabaseFile(db, dbPath);
+
+    expect(fs.existsSync(dbPath)).toBe(true);
+    expect(fs.readdirSync(dir).filter((name) => name.includes(".tmp"))).toEqual([]);
+
+    const SQL = await initSqlJs({
+      locateFile: (file) => `node_modules/sql.js/dist/${file}`
+    });
+    const restored = new SQL.Database(fs.readFileSync(dbPath));
+    expect(all<{ value: string }>(restored, "select value from settings where key = 'health'")).toEqual([
+      { value: "ok" }
+    ]);
   });
 });

@@ -118,5 +118,32 @@ export async function getDb(): Promise<Database> {
 
 export function persistDb(db: Database): void {
   ensureDataDirs();
-  fs.writeFileSync(getDbPath(), Buffer.from(db.export()));
+  writeDatabaseFile(db, getDbPath());
+}
+
+export function writeDatabaseFile(db: Database, dbPath: string): void {
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  const tempPath = `${dbPath}.${process.pid}.${Date.now()}.tmp`;
+  const fd = fs.openSync(tempPath, "w");
+  try {
+    fs.writeFileSync(fd, Buffer.from(db.export()));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tempPath, dbPath);
+  fsyncDirectory(path.dirname(dbPath));
+}
+
+function fsyncDirectory(dir: string): void {
+  try {
+    const fd = fs.openSync(dir, "r");
+    try {
+      fs.fsyncSync(fd);
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch {
+    // Some filesystems do not allow fsync on directories; the file rename is still atomic.
+  }
 }

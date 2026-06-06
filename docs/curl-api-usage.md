@@ -343,6 +343,14 @@ curl.exe -L `
   -o latest-online-notepad-backup.zip
 ```
 
+## 健康检查
+
+```bash
+curl -sS "$BASE/api/health"
+```
+
+健康检查不需要 API Key，返回版本、检查时间和数据目录可写状态。
+
 ## 上传 ZIP 导入
 
 ```bash

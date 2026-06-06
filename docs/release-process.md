@@ -34,8 +34,8 @@ rtk docker compose config
 发布 tag 名称使用 `v` 前缀，例如：
 
 ```bash
-rtk git tag v0.4.2
-rtk git push origin v0.4.2
+rtk git tag v0.4.3
+rtk git push origin v0.4.3
 ```
 
 如果需要手动创建 GitHub Release，正文也直接使用 `CHANGELOG.md` 中对应版本的小节内容。建议格式：

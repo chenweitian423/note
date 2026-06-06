@@ -7,6 +7,7 @@ import {
   Check,
   Code2,
   Copy,
+  Database,
   Download,
   FilePlus2,
   Heading1,
@@ -65,6 +66,12 @@ type ApiKey = {
   lastUsedAt: string | null;
 };
 
+type Backup = {
+  filename: string;
+  size: number;
+  createdAt: string;
+};
+
 function normalizeNote(note: Note): Note {
   return {
     ...note,
@@ -87,6 +94,9 @@ export function NoteShell() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [apiKeyName, setApiKeyName] = useState("curl");
   const [copiedApiKeyId, setCopiedApiKeyId] = useState("");
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+  const [backups, setBackups] = useState<Backup[]>([]);
+  const [backupStatus, setBackupStatus] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectedNote = useMemo(() => notes.find((note) => note.id === selectedId) ?? null, [notes, selectedId]);
   const firstLoad = useRef(true);
@@ -229,6 +239,30 @@ export function NoteShell() {
     event.target.value = "";
   }
 
+  async function openBackupDialog() {
+    setBackupDialogOpen(true);
+    await loadBackups();
+  }
+
+  async function loadBackups() {
+    const response = await fetch("/api/backups");
+    if (!response.ok) return;
+    const data = (await response.json()) as { backups: Backup[] };
+    setBackups(data.backups);
+  }
+
+  async function createBackupArchive() {
+    setBackupStatus("正在创建备份...");
+    const response = await fetch("/api/backups", { method: "POST" });
+    if (!response.ok) {
+      setBackupStatus("备份失败");
+      return;
+    }
+    const data = (await response.json()) as { backup: Backup };
+    setBackups((current) => [data.backup, ...current.filter((backup) => backup.filename !== data.backup.filename)]);
+    setBackupStatus("备份已创建");
+  }
+
   async function openApiKeyDialog() {
     setApiKeyDialogOpen(true);
     await loadApiKeys();
@@ -275,6 +309,12 @@ export function NoteShell() {
     window.setTimeout(() => setCopiedApiKeyId(""), 1200);
   }
 
+  function formatBytes(size: number) {
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  }
+
   return (
     <main className="workspace">
       <aside className={`sidebar ${activeMobilePane === "list" ? "active-pane" : ""}`}>
@@ -284,6 +324,9 @@ export function NoteShell() {
           </button>
           <button title="导出" aria-label="导出" onClick={exportZip}>
             <Download size={18} />
+          </button>
+          <button title="备份" aria-label="备份管理" onClick={openBackupDialog}>
+            <Database size={18} />
           </button>
           <button title="API Key" aria-label="API Key" onClick={openApiKeyDialog}>
             <KeyRound size={18} />
@@ -401,11 +444,51 @@ export function NoteShell() {
           </div>
           {(selectedNote?.attachments ?? []).map((attachment) => (
             <div key={attachment.id} className="attachment-row">
-              {attachment.filename}
+              <span>{attachment.filename}</span>
+              <a
+                className="attachment-download"
+                href={`/api/attachments/${attachment.id}/download`}
+                title="下载附件"
+                aria-label={`下载 ${attachment.filename}`}
+              >
+                <Download size={15} />
+              </a>
             </div>
           ))}
         </div>
       </aside>
+      {backupDialogOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <section className="api-key-dialog" role="dialog" aria-modal="true" aria-label="备份管理">
+            <div className="dialog-header">
+              <h2>备份管理</h2>
+              <button aria-label="关闭" onClick={() => setBackupDialogOpen(false)}>
+                ×
+              </button>
+            </div>
+            <div className="api-key-create">
+              <button onClick={createBackupArchive}>创建备份</button>
+              <a className="text-action" href="/api/backups/latest">
+                下载最新备份
+              </a>
+              {backupStatus ? <span className="status-line">{backupStatus}</span> : null}
+            </div>
+            <div className="api-key-list">
+              {backups.map((backup) => (
+                <article key={backup.filename} className="api-key-item">
+                  <div className="api-key-meta">
+                    <strong>{backup.filename}</strong>
+                    <span>
+                      {new Date(backup.createdAt).toLocaleString("zh-CN")} · {formatBytes(backup.size)}
+                    </span>
+                  </div>
+                </article>
+              ))}
+              {backups.length === 0 ? <p className="status-line">还没有备份。</p> : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
       {apiKeyDialogOpen ? (
         <div className="modal-backdrop" role="presentation">
           <section className="api-key-dialog" role="dialog" aria-modal="true" aria-label="API Key 管理">

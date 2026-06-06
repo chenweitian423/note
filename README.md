@@ -4,7 +4,7 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.2`
+- 当前版本：`0.4.3`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
 - curl 远程操作：[docs/curl-api-usage.md](./docs/curl-api-usage.md)
@@ -29,6 +29,7 @@ open http://localhost:31300
 
 应用支持手动和可选定时备份。备份文件保存到 `/data/exports`，格式与迁移导出的 ZIP 一致。
 
+- 网页入口：点击左上角数据库图标打开备份管理。
 - 手动创建：`POST /api/backups`
 - 列出备份：`GET /api/backups`
 - 下载最新备份：`GET /api/backups/latest`
@@ -40,7 +41,7 @@ open http://localhost:31300
 每次发布都应同步更新版本号和更新内容：
 
 - 仓库内记录：更新 [CHANGELOG.md](./CHANGELOG.md)。
-- 版本 tag：使用 `v` 前缀，例如 `v0.4.2`。
+- 版本 tag：使用 `v` 前缀，例如 `v0.4.3`。
 - GitHub Release：推送 `v*` tag 后由 GitHub Actions 自动创建，正文来自 `CHANGELOG.md` 对应版本小节。
 
 手动发布细节见 [docs/release-process.md](./docs/release-process.md)。
@@ -52,6 +53,14 @@ npm run test
 npm run build
 docker compose config
 ```
+
+## 健康检查
+
+```bash
+curl http://localhost:31300/api/health
+```
+
+健康检查会返回版本、检查时间，以及 `/data`、`/data/uploads`、`/data/exports` 是否可写。
 
 ## 环境变量
 
