@@ -1,4 +1,5 @@
 .git
+.github
 .worktrees
 .tools
 node_modules
@@ -10,4 +11,7 @@ data
 playwright-report
 test-results
 docs
+tests
+README.md
+CHANGELOG.md
 *.tar.gz

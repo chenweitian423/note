@@ -29,7 +29,16 @@ rtk docker compose config
 
 ## GitHub 发布说明
 
-GitHub Release 正文直接使用 `CHANGELOG.md` 中对应版本的小节内容。建议格式：
+推送 `v*` tag 后，`.github/workflows/release.yml` 会自动创建 GitHub Release。Release 正文来自 `CHANGELOG.md` 中对应版本的小节内容。
+
+发布 tag 名称使用 `v` 前缀，例如：
+
+```bash
+rtk git tag v0.4.1
+rtk git push origin v0.4.1
+```
+
+如果需要手动创建 GitHub Release，正文也直接使用 `CHANGELOG.md` 中对应版本的小节内容。建议格式：
 
 ```text
 ## 更新内容
@@ -42,12 +51,3 @@ GitHub Release 正文直接使用 `CHANGELOG.md` 中对应版本的小节内容�
 - rtk npm run build
 - rtk docker compose config
 ```
-
-发布 tag 名称使用 `v` 前缀，例如：
-
-```bash
-rtk git tag v0.4.0
-rtk git push origin v0.4.0
-```
-
-在 GitHub 上创建 Release 时选择同名 tag，并粘贴对应版本说明。

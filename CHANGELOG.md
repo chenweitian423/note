@@ -2,6 +2,12 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.1 - 2026-06-06
+
+- 优化 Dockerfile 为多阶段构建，使用 Next.js standalone 输出运行生产服务，并保留 `sql.js` wasm 运行资产。
+- 重排 README 首页入口，让部署、远程操作、版本发布和验证信息更容易在 GitHub 首页找到。
+- 新增 GitHub Actions Release 工作流，推送 `v*` tag 后自动用 `CHANGELOG.md` 对应版本小节创建 GitHub Release。
+
 ## 0.4.0 - 2026-05-31
 
 - 补齐历史版本记录，作为后续 GitHub Release 说明的来源。
