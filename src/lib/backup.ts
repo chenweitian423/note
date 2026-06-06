@@ -10,6 +10,14 @@ export type BackupInfo = {
   createdAt: string;
 };
 
+export type BackupSummary = {
+  count: number;
+  totalSize: number;
+  retention: number;
+  oldestCreatedAt: string | null;
+  newestCreatedAt: string | null;
+};
+
 const BACKUP_PREFIX = "online-notepad-backup-";
 const BACKUP_SUFFIX = ".zip";
 
@@ -71,6 +79,17 @@ export function deleteBackupByFilename(exportsDir: string, filename: string): bo
   }
   fs.unlinkSync(backup.path);
   return true;
+}
+
+export function summarizeBackups(backups: BackupInfo[], retention: number): BackupSummary {
+  const createdTimes = backups.map((backup) => backup.createdAt).sort();
+  return {
+    count: backups.length,
+    totalSize: backups.reduce((total, backup) => total + backup.size, 0),
+    retention,
+    oldestCreatedAt: createdTimes[0] ?? null,
+    newestCreatedAt: createdTimes.at(-1) ?? null
+  };
 }
 
 function pruneBackups(exportsDir: string, retention: number): void {

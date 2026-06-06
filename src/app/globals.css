@@ -444,6 +444,11 @@ textarea {
   width: min(760px, 100%);
 }
 
+.confirm-dialog {
+  max-width: 520px;
+  width: min(520px, 100%);
+}
+
 .dialog-header,
 .api-key-create,
 .api-key-actions {
@@ -544,6 +549,10 @@ textarea {
   font-size: 13px;
 }
 
+.backup-summary {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .settings-actions {
   align-items: center;
   display: flex;
@@ -555,6 +564,20 @@ textarea {
   gap: 6px;
   padding: 0 14px;
   width: auto;
+}
+
+.confirm-actions {
+  justify-content: flex-end;
+}
+
+.danger-action {
+  border-color: #d85b5b;
+  color: #b42323;
+}
+
+.danger-action:hover {
+  border-color: #b42323;
+  color: #b42323;
 }
 
 .api-key-create .text-action,
@@ -613,5 +636,17 @@ textarea {
     height: 34px;
     width: auto;
     padding: 0 12px;
+  }
+
+  .backup-summary,
+  .settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .backup-summary,
+  .settings-grid {
+    grid-template-columns: 1fr;
   }
 }

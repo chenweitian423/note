@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { AutoBackupStatus } from "./auto-backup";
 
 export type HealthStatus = {
   ok: boolean;
@@ -10,6 +11,7 @@ export type HealthStatus = {
     uploadsDirWritable: boolean;
     exportsDirWritable: boolean;
   };
+  autoBackup: AutoBackupStatus;
 };
 
 export function getHealthStatus(input: {
@@ -17,6 +19,7 @@ export function getHealthStatus(input: {
   uploadsDir: string;
   exportsDir: string;
   version: string;
+  autoBackup: AutoBackupStatus;
 }): HealthStatus {
   const checks = {
     dataDirWritable: canWrite(input.dataDir),
@@ -27,7 +30,8 @@ export function getHealthStatus(input: {
     ok: Object.values(checks).every(Boolean),
     version: input.version,
     checkedAt: new Date().toISOString(),
-    checks
+    checks,
+    autoBackup: input.autoBackup
   };
 }
 

@@ -20,7 +20,16 @@ describe("health status", () => {
       dataDir,
       uploadsDir,
       exportsDir,
-      version: "9.9.9"
+      version: "9.9.9",
+      autoBackup: {
+        enabled: false,
+        intervalHours: 0,
+        retention: 10,
+        running: false,
+        latestBackupCreatedAt: null,
+        lastRunAt: null,
+        lastError: null
+      }
     });
 
     expect(status.ok).toBe(true);
@@ -28,5 +37,6 @@ describe("health status", () => {
     expect(status.checks.dataDirWritable).toBe(true);
     expect(status.checks.uploadsDirWritable).toBe(true);
     expect(status.checks.exportsDirWritable).toBe(true);
+    expect(status.autoBackup.enabled).toBe(false);
   });
 });

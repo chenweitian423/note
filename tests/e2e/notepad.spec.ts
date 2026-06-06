@@ -1,30 +1,68 @@
 import { expect, test } from "@playwright/test";
 
-test("login, create note, preview markdown, export", async ({ page }) => {
+async function login(page: import("@playwright/test").Page) {
   await page.goto("/");
-  await page.getByLabel("访问密码").fill("E2ePassword123");
-  await page.getByRole("button", { name: "登录" }).click();
+  await page.locator('input[name="password"]').fill("E2ePassword123");
+  await page.locator(".login-panel button").click();
+  await expect(page.locator(".topbar")).toBeVisible();
+}
+
+async function openBackupManager(page: import("@playwright/test").Page) {
+  await page.locator(".topbar button").nth(2).click();
+  const settingsDialog = page.locator("section.api-key-dialog", { has: page.locator(".settings-grid") });
+  await settingsDialog.locator(".settings-actions button").nth(1).click();
+  const backupDialog = page.locator("section.api-key-dialog", { has: page.locator(".backup-summary") });
+  await expect(backupDialog).toBeVisible();
+  return backupDialog;
+}
+
+test("login, create note, preview markdown, export", async ({ page }) => {
+  await login(page);
+
   const topbar = page.locator(".topbar");
-  await topbar.getByRole("button", { name: "新建笔记" }).click();
-  await page.getByRole("textbox", { name: "标题", exact: true }).fill("E2E 笔记");
-  await page.getByLabel("正文").fill("# 标题\n\n- 内容");
-  await expect(page.getByRole("heading", { name: "标题" })).toBeVisible();
+  await topbar.locator("button").nth(0).click();
+  await page.locator(".editor-header input").fill("E2E note");
+  await page.locator("textarea").fill("# E2E heading\n\n- Content");
+  await expect(page.getByRole("heading", { name: "E2E heading" })).toBeVisible();
+
   const downloadPromise = page.waitForEvent("download");
-  await topbar.getByRole("button", { name: "导出" }).click();
+  await topbar.locator("button").nth(1).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toContain(".zip");
 });
 
 test("backup manager exposes zip restore upload", async ({ page }) => {
-  await page.goto("/");
-  await page.getByLabel("访问密码").fill("E2ePassword123");
-  await page.getByRole("button", { name: "登录" }).click();
-  await page.getByRole("button", { name: "设置和状态" }).click();
+  await login(page);
+  const backupDialog = await openBackupManager(page);
 
-  const settingsDialog = page.getByRole("dialog", { name: "设置和状态" });
-  await settingsDialog.getByRole("button", { name: "备份管理" }).click();
+  await expect(backupDialog.locator('input[accept=".zip,application/zip"]')).toHaveCount(1);
+});
 
-  const backupDialog = page.getByRole("dialog", { name: "备份管理" });
-  await expect(backupDialog).toBeVisible();
-  await expect(backupDialog.getByText("导入备份 ZIP")).toBeVisible();
+test("backup deletion requires in-app confirmation", async ({ page }) => {
+  let deleteRequests = 0;
+  page.on("request", (request) => {
+    if (request.method() === "DELETE" && request.url().includes("/api/backups/")) {
+      deleteRequests += 1;
+    }
+  });
+
+  await login(page);
+  const backupDialog = await openBackupManager(page);
+
+  await backupDialog.locator(".api-key-create button").click();
+  const backupItem = backupDialog.locator(".api-key-item", { hasText: ".zip" }).first();
+  await expect(backupItem).toBeVisible();
+
+  await backupItem.locator("button.text-action").click();
+  const confirmDialog = page.locator(".confirm-dialog");
+  await expect(confirmDialog).toBeVisible();
+
+  await confirmDialog.locator(".confirm-actions button").first().click();
+  await expect(confirmDialog).toBeHidden();
+  expect(deleteRequests).toBe(0);
+
+  await backupItem.locator("button.text-action").click();
+  await confirmDialog.locator(".danger-action").click();
+  await expect(confirmDialog).toBeHidden();
+  expect(deleteRequests).toBe(1);
 });

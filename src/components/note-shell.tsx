@@ -77,11 +77,30 @@ type Backup = {
   createdAt: string;
 };
 
+type BackupSummary = {
+  count: number;
+  totalSize: number;
+  retention: number;
+  oldestCreatedAt: string | null;
+  newestCreatedAt: string | null;
+};
+
+type AutoBackupStatus = {
+  enabled: boolean;
+  intervalHours: number;
+  retention: number;
+  running: boolean;
+  latestBackupCreatedAt: string | null;
+  lastRunAt: string | null;
+  lastError: string | null;
+};
+
 type HealthStatus = {
   ok: boolean;
   version: string;
   checkedAt: string;
   checks: Record<string, boolean>;
+  autoBackup: AutoBackupStatus;
 };
 
 function normalizeNote(note: Note): Note {
@@ -119,6 +138,8 @@ export function NoteShell() {
   const [copiedApiKeyId, setCopiedApiKeyId] = useState("");
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [backups, setBackups] = useState<Backup[]>([]);
+  const [backupSummary, setBackupSummary] = useState<BackupSummary | null>(null);
+  const [backupDeleteTarget, setBackupDeleteTarget] = useState<Backup | null>(null);
   const [backupStatus, setBackupStatus] = useState("");
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [health, setHealth] = useState<HealthStatus | null>(null);
@@ -284,11 +305,15 @@ export function NoteShell() {
 
   async function openBackupDialog() {
     setBackupDialogOpen(true);
-    await loadBackups();
+    await Promise.all([loadBackups(), loadHealth()]);
   }
 
   async function openSettingsDialog() {
     setSettingsDialogOpen(true);
+    await loadHealth();
+  }
+
+  async function loadHealth() {
     const response = await fetch("/api/health");
     if (!response.ok) return;
     setHealth((await response.json()) as HealthStatus);
@@ -297,8 +322,9 @@ export function NoteShell() {
   async function loadBackups() {
     const response = await fetch("/api/backups");
     if (!response.ok) return;
-    const data = (await response.json()) as { backups: Backup[] };
+    const data = (await response.json()) as { backups: Backup[]; summary: BackupSummary };
     setBackups(data.backups);
+    setBackupSummary(data.summary);
   }
 
   async function createBackupArchive() {
@@ -309,18 +335,28 @@ export function NoteShell() {
       return;
     }
     const data = (await response.json()) as { backup: Backup };
-    setBackups((current) => [data.backup, ...current.filter((backup) => backup.filename !== data.backup.filename)]);
+    setBackups((current) => {
+      const nextBackups = [data.backup, ...current.filter((backup) => backup.filename !== data.backup.filename)];
+      setBackupSummary(summarizeBackupList(nextBackups, backupSummary?.retention ?? 10));
+      return nextBackups;
+    });
     setBackupStatus("备份已创建");
   }
 
-  async function deleteBackupArchive(backup: Backup) {
-    if (!window.confirm(`确定删除备份 ${backup.filename}？`)) return;
+  async function deleteBackupArchive() {
+    if (!backupDeleteTarget) return;
+    const backup = backupDeleteTarget;
     const response = await fetch(`/api/backups/${encodeURIComponent(backup.filename)}`, { method: "DELETE" });
     if (!response.ok) {
       setBackupStatus("删除备份失败");
       return;
     }
-    setBackups((current) => current.filter((item) => item.filename !== backup.filename));
+    setBackups((current) => {
+      const nextBackups = current.filter((item) => item.filename !== backup.filename);
+      setBackupSummary(summarizeBackupList(nextBackups, backupSummary?.retention ?? 10));
+      return nextBackups;
+    });
+    setBackupDeleteTarget(null);
     setBackupStatus("备份已删除");
   }
 
@@ -379,6 +415,21 @@ export function NoteShell() {
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  function summarizeBackupList(items: Backup[], retention: number): BackupSummary {
+    const createdTimes = items.map((backup) => backup.createdAt).sort();
+    return {
+      count: items.length,
+      totalSize: items.reduce((total, backup) => total + backup.size, 0),
+      retention,
+      oldestCreatedAt: createdTimes[0] ?? null,
+      newestCreatedAt: createdTimes.at(-1) ?? null
+    };
+  }
+
+  function formatBackupDate(value: string | null) {
+    return value ? new Date(value).toLocaleString("zh-CN") : "暂无";
   }
 
   return (
@@ -536,6 +587,50 @@ export function NoteShell() {
               </label>
               {backupStatus ? <span className="status-line">{backupStatus}</span> : null}
             </div>
+            <div className="settings-grid backup-summary">
+              <div>
+                <span>备份总数</span>
+                <strong>{backupSummary?.count ?? backups.length}</strong>
+              </div>
+              <div>
+                <span>总占用空间</span>
+                <strong>{formatBytes(backupSummary?.totalSize ?? backups.reduce((total, backup) => total + backup.size, 0))}</strong>
+              </div>
+              <div>
+                <span>保留策略</span>
+                <strong>最近 {backupSummary?.retention ?? 10} 份</strong>
+              </div>
+              <div>
+                <span>最早备份</span>
+                <strong>{formatBackupDate(backupSummary?.oldestCreatedAt ?? null)}</strong>
+              </div>
+              <div>
+                <span>最新备份</span>
+                <strong>{formatBackupDate(backupSummary?.newestCreatedAt ?? null)}</strong>
+              </div>
+            </div>
+            <div className="settings-grid backup-summary auto-backup-summary">
+              <div>
+                <span>自动备份</span>
+                <strong>{health?.autoBackup.enabled ? "已开启" : "未开启"}</strong>
+              </div>
+              <div>
+                <span>备份间隔</span>
+                <strong>{health?.autoBackup.enabled ? `${health.autoBackup.intervalHours} 小时` : "未设置"}</strong>
+              </div>
+              <div>
+                <span>最近自动备份</span>
+                <strong>{formatBackupDate(health?.autoBackup.lastRunAt ?? null)}</strong>
+              </div>
+              <div>
+                <span>运行状态</span>
+                <strong>{health?.autoBackup.running ? "运行中" : "空闲"}</strong>
+              </div>
+              <div>
+                <span>最近失败</span>
+                <strong>{health?.autoBackup.lastError ?? "无"}</strong>
+              </div>
+            </div>
             <div className="api-key-list">
               {backups.map((backup) => (
                 <article key={backup.filename} className="api-key-item">
@@ -552,7 +647,7 @@ export function NoteShell() {
                     <button
                       className="text-action"
                       aria-label={`删除 ${backup.filename}`}
-                      onClick={() => deleteBackupArchive(backup)}
+                      onClick={() => setBackupDeleteTarget(backup)}
                     >
                       删除这份备份
                     </button>
@@ -560,6 +655,35 @@ export function NoteShell() {
                 </article>
               ))}
               {backups.length === 0 ? <p className="status-line">还没有备份。</p> : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
+      {backupDeleteTarget ? (
+        <div className="modal-backdrop" role="presentation">
+          <section className="api-key-dialog confirm-dialog" role="dialog" aria-modal="true" aria-label="确认删除备份">
+            <div className="dialog-header">
+              <h2>确认删除</h2>
+              <button aria-label="取消" onClick={() => setBackupDeleteTarget(null)}>
+                ×
+              </button>
+            </div>
+            <div className="api-key-list">
+              <article className="api-key-item compact">
+                <div className="api-key-meta">
+                  <strong>{backupDeleteTarget.filename}</strong>
+                  <span>创建时间 {new Date(backupDeleteTarget.createdAt).toLocaleString("zh-CN")}</span>
+                  <span>文件大小 {formatBytes(backupDeleteTarget.size)}</span>
+                </div>
+              </article>
+            </div>
+            <div className="api-key-actions confirm-actions">
+              <button className="text-action" onClick={() => setBackupDeleteTarget(null)}>
+                取消
+              </button>
+              <button className="text-action danger-action" onClick={deleteBackupArchive}>
+                确认删除
+              </button>
             </div>
           </section>
         </div>

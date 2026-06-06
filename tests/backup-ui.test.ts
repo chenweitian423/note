@@ -32,4 +32,35 @@ describe("backup manager ui", () => {
     expect(css).toContain(".settings-actions .text-action");
     expect(css).toContain(".api-key-actions .text-action");
   });
+
+  it("uses an in-app delete confirmation instead of the browser confirm dialog", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
+
+    expect(source).not.toContain("window.confirm");
+    expect(source).toContain("backupDeleteTarget");
+    expect(source).toContain('aria-label="确认删除备份"');
+    expect(source).toContain("确认删除");
+    expect(source).toContain("取消");
+  });
+
+  it("shows backup statistics in the backup manager", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
+
+    expect(source).toContain("backupSummary");
+    expect(source).toContain("备份总数");
+    expect(source).toContain("总占用空间");
+    expect(source).toContain("保留策略");
+    expect(source).toContain("最早备份");
+    expect(source).toContain("最新备份");
+  });
+
+  it("shows auto backup status in the backup manager", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
+
+    expect(source).toContain("autoBackup");
+    expect(source).toContain("自动备份");
+    expect(source).toContain("备份间隔");
+    expect(source).toContain("最近自动备份");
+    expect(source).toContain("最近失败");
+  });
 });

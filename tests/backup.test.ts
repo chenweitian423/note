@@ -2,7 +2,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createBackup, deleteBackupByFilename, getBackupByFilename, getLatestBackup, listBackups } from "../src/lib/backup";
+import {
+  createBackup,
+  deleteBackupByFilename,
+  getBackupByFilename,
+  getLatestBackup,
+  listBackups,
+  summarizeBackups
+} from "../src/lib/backup";
 import { createNote } from "../src/lib/notes";
 import { readZipEntries } from "../src/lib/zip";
 import { createTestDb } from "../src/test/create-test-db";
@@ -96,5 +103,30 @@ describe("backup archives", () => {
     expect(deleteBackupByFilename(exportsDir, backup.filename)).toBe(true);
     expect(fs.existsSync(backup.path)).toBe(false);
     expect(deleteBackupByFilename(exportsDir, backup.filename)).toBe(false);
+  });
+
+  it("summarizes backup count, size, retention, and time range", () => {
+    const backups = [
+      {
+        filename: "online-notepad-backup-2026-06-06T02-00-00-000Z.zip",
+        path: "/exports/newer.zip",
+        size: 320,
+        createdAt: "2026-06-06T02:00:00.000Z"
+      },
+      {
+        filename: "online-notepad-backup-2026-06-06T01-00-00-000Z.zip",
+        path: "/exports/older.zip",
+        size: 180,
+        createdAt: "2026-06-06T01:00:00.000Z"
+      }
+    ];
+
+    expect(summarizeBackups(backups, 10)).toEqual({
+      count: 2,
+      totalSize: 500,
+      retention: 10,
+      oldestCreatedAt: "2026-06-06T01:00:00.000Z",
+      newestCreatedAt: "2026-06-06T02:00:00.000Z"
+    });
   });
 });
