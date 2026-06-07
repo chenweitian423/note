@@ -2,6 +2,12 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.24 - 2026-06-07
+
+- 部署脚本成功后输出版本、提交、健康检查地址和容器状态摘要，方便发布后快速确认。
+- GitHub Actions 工作流名称从 `Playwright` 调整为 `CI`，让包含 Compose 校验和 E2E 的邮件通知更准确。
+- README 和发布流程文档补充脏工作区部署保护说明，以及 `ALLOW_DIRTY_DEPLOY=1` 临时放行方式。
+
 ## 0.4.23 - 2026-06-07
 
 - 修复 GitHub Actions 中新增的 `docker compose config` 作业缺少 `/opt/online-notepad/.env` 导致失败的问题，CI 会先创建占位环境文件再校验 Compose 配置。

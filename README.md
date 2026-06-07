@@ -4,7 +4,7 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.23`
+- 当前版本：`0.4.24`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
 - curl 远程操作：[docs/curl-api-usage.md](./docs/curl-api-usage.md)
@@ -102,6 +102,8 @@ rtk bash scripts/deploy-sky195.sh
 ```
 
 脚本会同步代码到 `/opt/online-notepad/app`，保留 `/opt/online-notepad/.env`，构建启动后自动检查 `/api/health`。镜像使用 Next.js standalone 输出构建，运行层只包含生产启动所需文件。
+
+部署脚本默认会拒绝脏工作区，避免把未提交改动同步到线上。确需临时部署未提交内容时，可以显式设置 `ALLOW_DIRTY_DEPLOY=1`。
 
 ## 远程操作
 

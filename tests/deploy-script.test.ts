@@ -24,6 +24,9 @@ describe("deployment script", () => {
     expect(script).toContain("data.get");
     expect(script).toContain("version");
     expect(script).toContain("EXPECTED_VERSION");
+    expect(script).toContain("Deployment summary");
+    expect(script).toContain("git rev-parse --short HEAD");
+    expect(script).toContain("docker compose -p online-notepad ps");
 
     expect(powershellScript).toContain('$BaseDir = "/opt/online-notepad"');
     expect(powershellScript).toContain('$AppDir = "$BaseDir/app"');
@@ -43,5 +46,8 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("data.get");
     expect(powershellScript).toContain("version");
     expect(powershellScript).toContain("EXPECTED_VERSION");
+    expect(powershellScript).toContain("Deployment summary");
+    expect(powershellScript).toContain("git rev-parse --short HEAD");
+    expect(powershellScript).toContain("docker compose -p online-notepad ps");
   });
 });

@@ -5,6 +5,13 @@ import { describe, expect, it } from "vitest";
 const PLAYWRIGHT_IMAGE = "mcr.microsoft.com/playwright:v1.60.0-noble";
 
 describe("release verification workflow", () => {
+  it("uses a broad CI workflow name so notification emails describe all jobs", () => {
+    const workflow = fs.readFileSync(path.join(process.cwd(), ".github/workflows/playwright.yml"), "utf8");
+    const firstLine = workflow.split(/\r?\n/, 1)[0];
+
+    expect(firstLine).toBe("name: CI");
+  });
+
   it("pins Playwright 1.60 in package metadata, CI, and release docs", () => {
     const root = process.cwd();
     const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));

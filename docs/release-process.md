@@ -51,6 +51,8 @@ rtk powershell -ExecutionPolicy Bypass -File scripts/deploy-sky195.ps1
 
 脚本会把代码同步到 `/opt/online-notepad/app`，排除 `.env`、`node_modules`、`.next` 和测试产物，然后执行 `docker compose -p online-notepad up -d --build` 与 `/api/health` 健康检查。
 
+部署脚本默认会拒绝脏工作区，避免把未提交改动同步到线上。确需临时部署未提交内容时，可以显式设置 `ALLOW_DIRTY_DEPLOY=1` 后再运行部署命令。
+
 ## GitHub 发布说明
 
 推送 `v*` tag 后，`.github/workflows/release.yml` 会自动创建 GitHub Release。Release 正文来自 `CHANGELOG.md` 中对应版本的小节内容。
