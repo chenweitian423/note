@@ -53,7 +53,7 @@ test("backup deletion requires in-app confirmation", async ({ page }) => {
   const backupItem = backupDialog.locator(".api-key-item", { hasText: ".zip" }).first();
   await expect(backupItem).toBeVisible();
 
-  await backupItem.locator("button.text-action").click();
+  await backupItem.getByRole("button", { name: /删除/ }).click();
   const confirmDialog = page.locator(".confirm-dialog");
   await expect(confirmDialog).toBeVisible();
 
@@ -61,7 +61,7 @@ test("backup deletion requires in-app confirmation", async ({ page }) => {
   await expect(confirmDialog).toBeHidden();
   expect(deleteRequests).toBe(0);
 
-  await backupItem.locator("button.text-action").click();
+  await backupItem.getByRole("button", { name: /删除/ }).click();
   await confirmDialog.locator(".danger-action").click();
   await expect(confirmDialog).toBeHidden();
   expect(deleteRequests).toBe(1);
