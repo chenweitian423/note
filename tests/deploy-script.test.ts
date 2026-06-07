@@ -49,5 +49,6 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("Deployment summary");
     expect(powershellScript).toContain("git rev-parse --short HEAD");
     expect(powershellScript).toContain("docker compose -p online-notepad ps");
+    expect(powershellScript).toContain('Replace("`r`n", "`n")');
   });
 });

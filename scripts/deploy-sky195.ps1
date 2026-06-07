@@ -74,7 +74,7 @@ printf 'Health: http://127.0.0.1:31300/api/health\n'
 docker compose -p online-notepad ps
 '@
 
-$RemoteScript = $RemoteScript.Replace("__APP_DIR__", $AppDir).Replace("__ENV_FILE__", $EnvFile).Replace("__EXPECTED_VERSION__", $ExpectedVersion).Replace("__LOCAL_COMMIT__", $LocalCommit)
+$RemoteScript = $RemoteScript.Replace("__APP_DIR__", $AppDir).Replace("__ENV_FILE__", $EnvFile).Replace("__EXPECTED_VERSION__", $ExpectedVersion).Replace("__LOCAL_COMMIT__", $LocalCommit).Replace("`r`n", "`n")
 $RemoteScript | ssh $HostName "bash -s"
 
 Remove-Item -LiteralPath $Archive -Force
