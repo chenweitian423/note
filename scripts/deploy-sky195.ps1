@@ -10,6 +10,11 @@ if (!(Test-Path -LiteralPath "package.json") -or !(Test-Path -LiteralPath "docke
   throw "Run this script from the online-notepad repository root."
 }
 
+$ExpectedVersion = (Get-Content -LiteralPath "package.json" -Raw | ConvertFrom-Json).version
+if (!$ExpectedVersion) {
+  throw "Could not read package.json version."
+}
+
 if (Test-Path -LiteralPath $Archive) {
   Remove-Item -LiteralPath $Archive -Force
 }
@@ -40,13 +45,18 @@ test -f '$EnvFile' || {
 }
 cd '$AppDir'
 docker compose -p online-notepad up -d --build
+export EXPECTED_VERSION='$ExpectedVersion'
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
-  if curl -fsS http://127.0.0.1:31300/api/health 2>/dev/null; then
+  HEALTH_JSON="\$(curl -fsS http://127.0.0.1:31300/api/health 2>/dev/null || true)"
+  if [ -n "\${HEALTH_JSON}" ] && HEALTH_JSON="\${HEALTH_JSON}" python3 -c 'import json, os; data=json.loads(os.environ["HEALTH_JSON"]); raise SystemExit(0 if data.get("ok") and data.get("version") == os.environ["EXPECTED_VERSION"] else 1)' 2>/dev/null; then
+    printf '%s\n' "\${HEALTH_JSON}"
     exit 0
   fi
   sleep 2
 done
-curl -fsS http://127.0.0.1:31300/api/health
+HEALTH_JSON="\$(curl -fsS http://127.0.0.1:31300/api/health)"
+printf '%s\n' "\${HEALTH_JSON}"
+HEALTH_JSON="\${HEALTH_JSON}" python3 -c 'import json, os; data=json.loads(os.environ["HEALTH_JSON"]); raise SystemExit(0 if data.get("ok") and data.get("version") == os.environ["EXPECTED_VERSION"] else 1)'
 "@
 
 Remove-Item -LiteralPath $Archive -Force

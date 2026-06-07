@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { createBackup, readBackupRetention } from "@/lib/backup";
 import { getDb, persistDb } from "@/lib/db";
-import { importArchive } from "@/lib/import";
+import { importArchive, inspectImportArchive } from "@/lib/import";
 import { DEFAULT_MAX_IMPORT_ZIP_BYTES, envNumber } from "@/lib/limits";
-import { getUploadsDir } from "@/lib/paths";
+import { getExportsDir, getUploadsDir } from "@/lib/paths";
 import { requireSession } from "@/lib/require-session";
 
 export async function POST(request: Request) {
@@ -20,10 +21,22 @@ export async function POST(request: Request) {
   }
 
   try {
+    const zipBuffer = Buffer.from(await file.arrayBuffer());
+    const preview = await inspectImportArchive(zipBuffer);
+    if (!preview.valid) {
+      return NextResponse.json({ error: preview.error }, { status: 400 });
+    }
+
     const db = await getDb();
-    const result = await importArchive(db, getUploadsDir(), Buffer.from(await file.arrayBuffer()));
+    const uploadsDir = getUploadsDir();
+    const backup = await createBackup(db, {
+      uploadsDir,
+      exportsDir: getExportsDir(),
+      retention: readBackupRetention()
+    });
+    const result = await importArchive(db, uploadsDir, zipBuffer);
     persistDb(db);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, backup });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "导入失败" }, { status: 400 });
   }

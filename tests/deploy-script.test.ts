@@ -14,6 +14,12 @@ describe("deployment script", () => {
     expect(script).toContain("docker compose -p online-notepad");
     expect(script).toContain("for attempt in");
     expect(script).toContain("curl -fsS http://127.0.0.1:31300/api/health");
+    expect(script).toContain("EXPECTED_VERSION");
+    expect(script).toContain("package.json");
+    expect(script).toContain("python3 -c");
+    expect(script).toContain("data.get");
+    expect(script).toContain("version");
+    expect(script).toContain("EXPECTED_VERSION");
 
     expect(powershellScript).toContain('$BaseDir = "/opt/online-notepad"');
     expect(powershellScript).toContain('$AppDir = "$BaseDir/app"');
@@ -22,5 +28,11 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("docker compose -p online-notepad");
     expect(powershellScript).toContain("for attempt in");
     expect(powershellScript).toContain("curl -fsS http://127.0.0.1:31300/api/health");
+    expect(powershellScript).toContain("$ExpectedVersion");
+    expect(powershellScript).toContain("package.json");
+    expect(powershellScript).toContain("python3 -c");
+    expect(powershellScript).toContain("data.get");
+    expect(powershellScript).toContain("version");
+    expect(powershellScript).toContain("EXPECTED_VERSION");
   });
 });

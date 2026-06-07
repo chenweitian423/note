@@ -9,6 +9,11 @@ if [ ! -f "package.json" ] || [ ! -f "docker-compose.yml" ]; then
   echo "Run this script from the online-notepad repository root." >&2
   exit 1
 fi
+EXPECTED_VERSION="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' package.json | head -n 1)"
+if [ -z "${EXPECTED_VERSION}" ]; then
+  echo "Could not read package.json version." >&2
+  exit 1
+fi
 
 tar \
   --exclude='.git' \
@@ -30,11 +35,16 @@ test -f '${ENV_FILE}' || {
 }
 cd '${APP_DIR}'
 docker compose -p online-notepad up -d --build
+export EXPECTED_VERSION='${EXPECTED_VERSION}'
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
-  if curl -fsS http://127.0.0.1:31300/api/health 2>/dev/null; then
+  HEALTH_JSON=\"\$(curl -fsS http://127.0.0.1:31300/api/health 2>/dev/null || true)\"
+  if [ -n \"\${HEALTH_JSON}\" ] && HEALTH_JSON=\"\${HEALTH_JSON}\" python3 -c 'import json, os; data=json.loads(os.environ[\"HEALTH_JSON\"]); raise SystemExit(0 if data.get(\"ok\") and data.get(\"version\") == os.environ[\"EXPECTED_VERSION\"] else 1)' 2>/dev/null; then
+    printf '%s\n' \"\${HEALTH_JSON}\"
     exit 0
   fi
   sleep 2
 done
-curl -fsS http://127.0.0.1:31300/api/health
+HEALTH_JSON=\"\$(curl -fsS http://127.0.0.1:31300/api/health)\"
+printf '%s\n' \"\${HEALTH_JSON}\"
+HEALTH_JSON=\"\${HEALTH_JSON}\" python3 -c 'import json, os; data=json.loads(os.environ[\"HEALTH_JSON\"]); raise SystemExit(0 if data.get(\"ok\") and data.get(\"version\") == os.environ[\"EXPECTED_VERSION\"] else 1)'
 "
