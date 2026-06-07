@@ -4,7 +4,7 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.27`
+- 当前版本：`0.4.28`
 - 当前稳定版基线：`v0.4.26`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
@@ -90,16 +90,17 @@ docker compose -p online-notepad down
 docker compose -p online-notepad up -d --build
 ```
 
-当前 `sky195` 可直接使用固定部署脚本：
+远端服务器可使用固定部署脚本。运行前先把 `HOST` 设置为你的 SSH 主机别名或地址：
 
 ```powershell
-rtk powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-sky195.ps1
+$env:HOST="your-ssh-host"
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-remote.ps1
 ```
 
 Bash/WSL/Linux 环境也可使用：
 
 ```bash
-rtk bash scripts/deploy-sky195.sh
+HOST=your-ssh-host rtk bash scripts/deploy-remote.sh
 ```
 
 脚本会同步代码到 `/opt/online-notepad/app`，保留 `/opt/online-notepad/.env`，构建启动后自动检查 `/api/health`。镜像使用 Next.js standalone 输出构建，运行层只包含生产启动所需文件。

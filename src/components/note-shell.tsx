@@ -851,14 +851,6 @@ export function NoteShell() {
                 导入 ZIP
                 <input type="file" accept=".zip,application/zip" onChange={importZip} />
               </label>
-              <a
-                className="text-action"
-                href="https://github.com/chenweitian423/note/blob/master/docs/curl-api-usage.md"
-                target="_blank"
-                rel="noreferrer"
-              >
-                curl 文档
-              </a>
             </div>
           </section>
         </div>

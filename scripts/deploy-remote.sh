@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOST="${HOST:-sky195}"
+HOST="${HOST:-${APP_HOST:-}}"
 BASE_DIR="/opt/online-notepad"
 APP_DIR="${BASE_DIR}/app"
 ENV_FILE="${BASE_DIR}/.env"
@@ -9,6 +9,10 @@ ARCHIVE="${TMPDIR:-/tmp}/online-notepad-deploy.tar"
 LOCAL_COMMIT="$(git rev-parse --short HEAD)"
 if [ ! -f "package.json" ] || [ ! -f "docker-compose.yml" ]; then
   echo "Run this script from the online-notepad repository root." >&2
+  exit 1
+fi
+if [ -z "${HOST}" ]; then
+  echo "Set HOST or APP_HOST to the remote SSH host before deploying." >&2
   exit 1
 fi
 EXPECTED_VERSION="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' package.json | head -n 1)"

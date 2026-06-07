@@ -54,4 +54,19 @@ describe("release verification workflow", () => {
     expect(e2e).toContain("getByRole");
     expect(e2e).toContain("getByLabel");
   });
+
+  it("does not expose personal deployment or repository details in public files", () => {
+    const publicFiles = [
+      "README.md",
+      "docs/release-process.md",
+      "src/components/note-shell.tsx"
+    ];
+
+    for (const file of publicFiles) {
+      const source = fs.readFileSync(path.join(process.cwd(), file), "utf8");
+      expect(source).not.toContain("sky195");
+      expect(source).not.toContain("deploy-sky195");
+      expect(source).not.toContain("chenweitian423");
+    }
+  });
 });

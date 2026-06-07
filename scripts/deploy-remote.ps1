@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$HostName = if ($env:HOST) { $env:HOST } else { "sky195" }
+$HostName = if ($env:HOST) { $env:HOST } elseif ($env:APP_HOST) { $env:APP_HOST } else { "" }
 $BaseDir = "/opt/online-notepad"
 $AppDir = "$BaseDir/app"
 $EnvFile = "$BaseDir/.env"
@@ -9,6 +9,9 @@ $LocalCommit = git rev-parse --short HEAD
 
 if (!(Test-Path -LiteralPath "package.json") -or !(Test-Path -LiteralPath "docker-compose.yml")) {
   throw "Run this script from the online-notepad repository root."
+}
+if (!$HostName) {
+  throw "Set HOST or APP_HOST to the remote SSH host before deploying."
 }
 
 $ExpectedVersion = (Get-Content -LiteralPath "package.json" -Raw | ConvertFrom-Json).version

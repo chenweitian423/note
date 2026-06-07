@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 
 describe("deployment script", () => {
   it("deploys code under /opt while keeping secrets outside the app directory", () => {
-    const script = fs.readFileSync(path.join(process.cwd(), "scripts/deploy-sky195.sh"), "utf8");
-    const powershellScript = fs.readFileSync(path.join(process.cwd(), "scripts/deploy-sky195.ps1"), "utf8");
+    const script = fs.readFileSync(path.join(process.cwd(), "scripts/deploy-remote.sh"), "utf8");
+    const powershellScript = fs.readFileSync(path.join(process.cwd(), "scripts/deploy-remote.ps1"), "utf8");
 
     expect(script).toContain('BASE_DIR="/opt/online-notepad"');
     expect(script).toContain('APP_DIR="${BASE_DIR}/app"');
@@ -27,6 +27,7 @@ describe("deployment script", () => {
     expect(script).toContain("Deployment summary");
     expect(script).toContain("git rev-parse --short HEAD");
     expect(script).toContain("docker compose -p online-notepad ps");
+    expect(script).not.toContain("sky195");
 
     expect(powershellScript).toContain('$BaseDir = "/opt/online-notepad"');
     expect(powershellScript).toContain('$AppDir = "$BaseDir/app"');
@@ -51,5 +52,6 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("docker compose -p online-notepad ps");
     expect(powershellScript).toContain('Replace("`r`n", "`n")');
     expect(powershellScript).toContain("tr -d '\\r' | bash -s");
+    expect(powershellScript).not.toContain("sky195");
   });
 });

@@ -13,7 +13,9 @@ describe("README deployment guide", () => {
     expect(readme).toContain("docker compose -p online-notepad up -d --build");
     expect(readme).toContain("docker compose -p online-notepad logs -f");
     expect(readme).toContain("curl -fsS http://127.0.0.1:31300/api/health");
-    expect(readme).toContain("scripts/deploy-sky195.ps1");
+    expect(readme).toContain("scripts/deploy-remote.ps1");
+    expect(readme).not.toContain("sky195");
+    expect(readme).not.toContain("deploy-sky195");
     expect(readme).toContain("ALLOW_DIRTY_DEPLOY=1");
     expect(readme).toContain("当前稳定版");
     expect(readme).toContain("npm run e2e");
@@ -32,5 +34,7 @@ describe("README deployment guide", () => {
 
     expect(releaseProcess).toContain("ALLOW_DIRTY_DEPLOY=1");
     expect(releaseProcess).toContain("脏工作区");
+    expect(releaseProcess).not.toContain("sky195");
+    expect(releaseProcess).not.toContain("deploy-sky195");
   });
 });
