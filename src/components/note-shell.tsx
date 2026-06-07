@@ -85,6 +85,20 @@ type BackupSummary = {
   newestCreatedAt: string | null;
 };
 
+type ImportPreview =
+  | {
+      valid: true;
+      app: string | null;
+      exportedAt: string;
+      noteCount: number;
+      attachmentCount: number;
+      checksumValid: boolean | null;
+    }
+  | {
+      valid: false;
+      error: string;
+    };
+
 type AutoBackupStatus = {
   enabled: boolean;
   intervalHours: number;
@@ -140,6 +154,9 @@ export function NoteShell() {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [backupSummary, setBackupSummary] = useState<BackupSummary | null>(null);
   const [backupDeleteTarget, setBackupDeleteTarget] = useState<Backup | null>(null);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [backupVerifyResults, setBackupVerifyResults] = useState<Record<string, ImportPreview>>({});
   const [backupStatus, setBackupStatus] = useState("");
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [health, setHealth] = useState<HealthStatus | null>(null);
@@ -268,28 +285,55 @@ export function NoteShell() {
     setImporting(true);
     const form = new FormData();
     form.set("file", file);
-    const response = await fetch("/api/import", { method: "POST", body: form });
+    const response = await fetch("/api/import/preview", { method: "POST", body: form });
+    const preview = (await response.json().catch(() => ({ valid: false, error: "ZIP 校验失败" }))) as ImportPreview;
     setImporting(false);
-    if (!response.ok) return;
-    await loadNotes("");
+    setPendingImportFile(file);
+    setImportPreview(preview);
     event.target.value = "";
   }
 
   async function restoreBackupZip(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    setBackupStatus("正在导入备份 ZIP...");
+    setBackupStatus("正在校验备份 ZIP...");
     const form = new FormData();
     form.set("file", file);
-    const response = await fetch("/api/import", { method: "POST", body: form });
+    const response = await fetch("/api/import/preview", { method: "POST", body: form });
+    const preview = (await response.json().catch(() => ({ valid: false, error: "ZIP 校验失败" }))) as ImportPreview;
     event.target.value = "";
+    setPendingImportFile(file);
+    setImportPreview(preview);
+    if (!preview.valid) {
+      setBackupStatus(`校验失败：${preview.error}`);
+      return;
+    }
+    setBackupStatus("校验通过，等待确认导入");
+  }
+
+  async function confirmImportZip() {
+    if (!pendingImportFile) return;
+    setImporting(true);
+    const form = new FormData();
+    form.set("file", pendingImportFile);
+    const response = await fetch("/api/import", { method: "POST", body: form });
+    setImporting(false);
     if (!response.ok) {
       const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      setImportPreview({ valid: false, error: data?.error ?? "导入失败" });
       setBackupStatus(data?.error ? `导入失败：${data.error}` : "导入失败");
       return;
     }
     await loadNotes("");
-    setBackupStatus("备份 ZIP 已导入");
+    setPendingImportFile(null);
+    setImportPreview(null);
+    setBackupStatus("ZIP 已导入");
+  }
+
+  function cancelImportZip() {
+    setPendingImportFile(null);
+    setImportPreview(null);
+    setBackupStatus("");
   }
 
   async function uploadAttachment(event: ChangeEvent<HTMLInputElement>) {
@@ -358,6 +402,14 @@ export function NoteShell() {
     });
     setBackupDeleteTarget(null);
     setBackupStatus("备份已删除");
+  }
+
+  async function verifyBackupArchive(backup: Backup) {
+    setBackupStatus(`正在校验 ${backup.filename}...`);
+    const response = await fetch(`/api/backups/${encodeURIComponent(backup.filename)}/verify`, { method: "POST" });
+    const preview = (await response.json().catch(() => ({ valid: false, error: "备份校验失败" }))) as ImportPreview;
+    setBackupVerifyResults((current) => ({ ...current, [backup.filename]: preview }));
+    setBackupStatus(preview.valid ? "备份可恢复" : `备份不可恢复：${preview.error}`);
   }
 
   async function openApiKeyDialog() {
@@ -430,6 +482,40 @@ export function NoteShell() {
 
   function formatBackupDate(value: string | null) {
     return value ? new Date(value).toLocaleString("zh-CN") : "暂无";
+  }
+
+  function renderImportPreview() {
+    if (!importPreview) return null;
+
+    return (
+      <article className="api-key-item compact">
+        <div className="api-key-meta">
+          <strong>{importPreview.valid ? "校验通过" : "校验失败"}</strong>
+          {importPreview.valid ? (
+            <>
+              <span>来源 {importPreview.app ?? "未知应用"}</span>
+              <span>导出时间 {new Date(importPreview.exportedAt).toLocaleString("zh-CN")}</span>
+              <span>
+                {importPreview.noteCount} 篇笔记 · {importPreview.attachmentCount} 个附件
+              </span>
+              <span>checksum {importPreview.checksumValid ? "可恢复" : "未提供"}</span>
+            </>
+          ) : (
+            <span>{importPreview.error}</span>
+          )}
+        </div>
+        <div className="api-key-actions">
+          <button className="text-action" onClick={cancelImportZip}>
+            取消导入
+          </button>
+          {importPreview.valid ? (
+            <button className="text-action" onClick={confirmImportZip} disabled={importing || !pendingImportFile}>
+              确认导入
+            </button>
+          ) : null}
+        </div>
+      </article>
+    );
   }
 
   return (
@@ -587,6 +673,7 @@ export function NoteShell() {
               </label>
               {backupStatus ? <span className="status-line">{backupStatus}</span> : null}
             </div>
+            {importPreview ? <div className="api-key-list">{renderImportPreview()}</div> : null}
             <div className="settings-grid backup-summary">
               <div>
                 <span>备份总数</span>
@@ -633,26 +720,43 @@ export function NoteShell() {
             </div>
             <div className="api-key-list">
               {backups.map((backup) => (
-                <article key={backup.filename} className="api-key-item">
-                  <div className="api-key-meta">
-                    <strong>{backup.filename}</strong>
-                    <span>
-                      {new Date(backup.createdAt).toLocaleString("zh-CN")} · {formatBytes(backup.size)}
-                    </span>
-                  </div>
-                  <div className="api-key-actions">
-                    <a className="text-action" href={`/api/backups/${encodeURIComponent(backup.filename)}`}>
-                      下载这份备份
-                    </a>
-                    <button
-                      className="text-action"
-                      aria-label={`删除 ${backup.filename}`}
-                      onClick={() => setBackupDeleteTarget(backup)}
-                    >
-                      删除这份备份
-                    </button>
-                  </div>
-                </article>
+                (() => {
+                  const verifyResult = backupVerifyResults[backup.filename];
+                  return (
+                    <article key={backup.filename} className="api-key-item">
+                      <div className="api-key-meta">
+                        <strong>{backup.filename}</strong>
+                        <span>
+                          {new Date(backup.createdAt).toLocaleString("zh-CN")} · {formatBytes(backup.size)}
+                        </span>
+                      </div>
+                      <div className="api-key-actions">
+                        <a className="text-action" href={`/api/backups/${encodeURIComponent(backup.filename)}`}>
+                          下载这份备份
+                        </a>
+                        <button className="text-action" onClick={() => verifyBackupArchive(backup)}>
+                          校验这份备份
+                        </button>
+                        <button
+                          className="text-action"
+                          aria-label={`删除 ${backup.filename}`}
+                          onClick={() => setBackupDeleteTarget(backup)}
+                        >
+                          删除这份备份
+                        </button>
+                      </div>
+                      {verifyResult ? (
+                        <div className="api-key-meta">
+                          <span>
+                            {verifyResult.valid
+                              ? `可恢复：${verifyResult.noteCount} 篇笔记，${verifyResult.attachmentCount} 个附件`
+                              : `不可恢复：${verifyResult.error}`}
+                          </span>
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })()
               ))}
               {backups.length === 0 ? <p className="status-line">还没有备份。</p> : null}
             </div>

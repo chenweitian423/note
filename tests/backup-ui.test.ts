@@ -63,4 +63,23 @@ describe("backup manager ui", () => {
     expect(source).toContain("最近自动备份");
     expect(source).toContain("最近失败");
   });
+
+  it("previews zip imports before confirming restore", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
+
+    expect(source).toContain("/api/import/preview");
+    expect(source).toContain("importPreview");
+    expect(source).toContain("确认导入");
+    expect(source).toContain("取消导入");
+    expect(source).toContain("校验通过");
+  });
+
+  it("exposes backup verification in the backup manager", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
+
+    expect(source).toContain("verifyBackupArchive");
+    expect(source).toContain("校验这份备份");
+    expect(source).toContain("可恢复");
+    expect(source).toContain("/verify");
+  });
 });

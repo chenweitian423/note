@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import archiver from "archiver";
 import { describe, expect, it } from "vitest";
 import { exportArchive } from "../src/lib/export";
-import { importArchive } from "../src/lib/import";
+import { importArchive, inspectImportArchive } from "../src/lib/import";
 import { createAttachment, createNote, listNotes } from "../src/lib/notes";
 import { readZipEntries } from "../src/lib/zip";
 import { createTestDb } from "../src/test/create-test-db";
@@ -102,5 +102,42 @@ describe("zip export and import", () => {
 
     const nextDb = await createTestDb();
     await expect(importArchive(nextDb, tempDir(), tampered)).rejects.toThrow(/checksum/i);
+  });
+
+  it("previews import archives without writing to the database or uploads directory", async () => {
+    const db = await createTestDb();
+    const uploadsDir = tempDir();
+    const note = createNote(db, { title: "preview", content: "content" });
+    fs.writeFileSync(path.join(uploadsDir, "sample.txt"), "hello");
+    createAttachment(db, {
+      noteId: note.id,
+      filename: "sample.txt",
+      storedName: "sample.txt",
+      mimeType: "text/plain",
+      size: 5
+    });
+
+    const zip = await exportArchive(db, uploadsDir);
+    const nextDb = await createTestDb();
+    const nextUploadsDir = tempDir();
+    const preview = await inspectImportArchive(zip);
+
+    expect(preview).toMatchObject({
+      valid: true,
+      checksumValid: true,
+      noteCount: 1,
+      attachmentCount: 1
+    });
+    expect(preview.exportedAt).toEqual(expect.any(String));
+    expect(preview.app).toBe("online-notepad");
+    expect(listNotes(nextDb, {})).toHaveLength(0);
+    expect(fs.readdirSync(nextUploadsDir)).toHaveLength(0);
+  });
+
+  it("reports invalid import archives without throwing", async () => {
+    const preview = await inspectImportArchive(Buffer.from("not a zip"));
+
+    expect(preview.valid).toBe(false);
+    expect(preview.error).toEqual(expect.any(String));
   });
 });
