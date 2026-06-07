@@ -23,6 +23,7 @@ describe("release verification workflow", () => {
 
     expect(workflow).toContain("npm run test");
     expect(workflow).toContain("npm run build");
+    expect(workflow).toContain("docker compose config");
     expect(workflow).toContain("npm run e2e");
   });
 

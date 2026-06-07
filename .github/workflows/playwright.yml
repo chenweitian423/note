@@ -11,6 +11,17 @@ permissions:
   contents: read
 
 jobs:
+  compose:
+    name: Docker Compose config
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose config
+        run: docker compose config
+
   e2e:
     name: Playwright 1.60
     runs-on: ubuntu-latest

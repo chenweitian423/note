@@ -2,6 +2,12 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.22 - 2026-06-07
+
+- README 当前版本号改为由测试守护，避免文档显示版本落后于 `package.json`。
+- GitHub Actions 新增 `docker compose config` 校验，覆盖发布流程中的 Compose 配置检查。
+- 固定部署脚本默认拒绝脏工作区部署，可通过 `ALLOW_DIRTY_DEPLOY=1` 显式临时放行。
+
 ## 0.4.21 - 2026-06-07
 
 - 修复 PowerShell 部署脚本通过 SSH 参数传递远端脚本时的引号保真问题，改为把远端脚本通过 stdin 交给 `bash -s` 执行，避免健康检查 Python 片段被 shell 改写。

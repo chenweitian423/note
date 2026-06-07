@@ -15,6 +15,13 @@ if (!$ExpectedVersion) {
   throw "Could not read package.json version."
 }
 
+if ($env:ALLOW_DIRTY_DEPLOY -ne "1") {
+  $Dirty = git status --porcelain
+  if ($Dirty) {
+    throw "Working tree has uncommitted changes. Commit or stash them before deploying, or set ALLOW_DIRTY_DEPLOY=1 to override."
+  }
+}
+
 if (Test-Path -LiteralPath $Archive) {
   Remove-Item -LiteralPath $Archive -Force
 }

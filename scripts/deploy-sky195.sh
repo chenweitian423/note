@@ -14,6 +14,10 @@ if [ -z "${EXPECTED_VERSION}" ]; then
   echo "Could not read package.json version." >&2
   exit 1
 fi
+if [ "${ALLOW_DIRTY_DEPLOY:-0}" != "1" ] && [ -n "$(git status --porcelain)" ]; then
+  echo "Working tree has uncommitted changes. Commit or stash them before deploying, or set ALLOW_DIRTY_DEPLOY=1 to override." >&2
+  exit 1
+fi
 
 tar \
   --exclude='.git' \

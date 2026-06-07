@@ -16,6 +16,8 @@ describe("deployment script", () => {
     expect(script).toContain("curl -fsS http://127.0.0.1:31300/api/health");
     expect(script).toContain("EXPECTED_VERSION");
     expect(script).toContain("package.json");
+    expect(script).toContain("ALLOW_DIRTY_DEPLOY");
+    expect(script).toContain("git status --porcelain");
     expect(script).toContain("python3 -c");
     expect(script).toContain("printf '%s'");
     expect(script).toContain("json.load(sys.stdin)");
@@ -32,6 +34,8 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("curl -fsS http://127.0.0.1:31300/api/health");
     expect(powershellScript).toContain("$ExpectedVersion");
     expect(powershellScript).toContain("package.json");
+    expect(powershellScript).toContain("ALLOW_DIRTY_DEPLOY");
+    expect(powershellScript).toContain("git status --porcelain");
     expect(powershellScript).toContain('ssh $HostName "bash -s"');
     expect(powershellScript).toContain("python3 -c");
     expect(powershellScript).toContain("printf '%s'");

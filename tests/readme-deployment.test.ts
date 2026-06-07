@@ -15,4 +15,12 @@ describe("README deployment guide", () => {
     expect(readme).toContain("curl -fsS http://127.0.0.1:31300/api/health");
     expect(readme).toContain("scripts/deploy-sky195.ps1");
   });
+
+  it("keeps the displayed current version in sync with package.json", () => {
+    const root = process.cwd();
+    const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
+    const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+
+    expect(readme).toContain(`当前版本：\`${packageJson.version}\``);
+  });
 });
