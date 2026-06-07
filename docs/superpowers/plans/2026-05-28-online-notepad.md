@@ -352,6 +352,8 @@ git commit -m "feat: add note data access"
 
 `DELETE /api/notes/:id` 软删除为归档。
 
+`POST /api/notes/bulk` 接收 `{ action, noteIds }`，支持 `archive`、`restore`、`delete` 批量操作；`delete` 为永久删除并清理附件文件。
+
 - [x] **Step 2: 实现 `requireSession`**
 
 `src/lib/require-session.ts` 从 cookie 读取 `notepad_session` 并调用 `readSessionToken()`，失败时返回 401 helper。

@@ -5,15 +5,18 @@ import path from "node:path";
 import { deleteAttachmentFiles } from "../src/lib/attachment-files";
 import {
   archiveNote,
+  archiveNotes,
   createAttachment,
   createNote,
   createTag,
+  deleteNotes,
   deleteNote,
   getAttachment,
   getNote,
   getNoteByNumber,
   listNotes,
   restoreNote,
+  restoreNotes,
   setNoteTags,
   updateNote
 } from "../src/lib/notes";
@@ -56,6 +59,30 @@ describe("note data access", () => {
 
     expect(listNotes(db, { archiveOnly: true })).toHaveLength(0);
     expect(listNotes(db).map((note) => note.id)).toEqual([archived.id, active.id]);
+  });
+
+  it("archives, restores, and deletes multiple notes in one operation", async () => {
+    const db = await createTestDb();
+    const first = createNote(db, { title: "bulk one" });
+    const second = createNote(db, { title: "bulk two" });
+    const third = createNote(db, { title: "keep" });
+
+    archiveNotes(db, [first.id, second.id]);
+
+    expect(listNotes(db).map((note) => note.id)).toEqual([third.id]);
+    expect(listNotes(db, { archiveOnly: true }).map((note) => note.id)).toEqual([second.id, first.id]);
+
+    restoreNotes(db, [first.id, second.id]);
+
+    expect(listNotes(db, { archiveOnly: true })).toHaveLength(0);
+    expect(listNotes(db).map((note) => note.id)).toEqual([second.id, first.id, third.id]);
+
+    archiveNotes(db, [first.id, second.id]);
+    deleteNotes(db, [first.id, second.id]);
+
+    expect(getNote(db, first.id)).toBeNull();
+    expect(getNote(db, second.id)).toBeNull();
+    expect(listNotes(db).map((note) => note.id)).toEqual([third.id]);
   });
 
   it("permanently deletes note metadata and related attachment rows", async () => {

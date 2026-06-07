@@ -4,13 +4,19 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.31`
+- 当前版本：`0.4.32`
 - 当前稳定版基线：`v0.4.26`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
 - curl 远程操作：[docs/curl-api-usage.md](./docs/curl-api-usage.md)
 - 恢复与迁移：[docs/restore-and-migration.md](./docs/restore-and-migration.md)
 - 默认访问地址：`http://localhost:31300`
+
+## 功能概览
+
+- 登录后进入三栏笔记工作区，支持 Markdown 编辑、预览、自动保存、标签和附件。
+- 当前笔记列表支持多选批量归档；归档箱支持多选批量恢复和批量永久删除。
+- 支持 ZIP 导入导出、备份管理、API Key 和远程 `curl` 自动化操作。
 
 ## Docker 部署
 

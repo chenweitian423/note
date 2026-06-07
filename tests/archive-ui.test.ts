@@ -13,6 +13,19 @@ describe("archive and note deletion ui", () => {
     expect(source).toContain("永久删除后不可恢复");
     expect(source).toContain("确认删除笔记");
     expect(source).toContain('params.set("archived", "true")');
-    expect(source).toContain("permanent=true");
+    expect(source).toContain("/api/notes/bulk");
+  });
+  it("exposes multi-select bulk archive, restore, and permanent delete actions", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
+
+    expect(source).toContain("selectedNoteIds");
+    expect(source).toContain('aria-label={`选择 ${note.title}`}');
+    expect(source).toContain("/api/notes/bulk");
+    expect(source).toContain('runBulkNoteAction("archive")');
+    expect(source).toContain('runBulkNoteAction("restore")');
+    expect(source).toContain('"delete"');
+    expect(source).toContain("批量归档");
+    expect(source).toContain("批量恢复");
+    expect(source).toContain("批量永久删除");
   });
 });

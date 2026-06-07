@@ -181,6 +181,47 @@ textarea:focus {
   overflow: auto;
 }
 
+.bulk-note-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bulk-note-actions .text-action {
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.note-select-all,
+.note-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.note-select-all {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.note-select-all input,
+.note-checkbox {
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.note-row {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding-left: 8px;
+}
+
+.note-row.selected {
+  background: var(--panel);
+  border-color: var(--accent);
+}
+
 .note-item {
   align-items: stretch;
   background: transparent;
@@ -209,11 +250,6 @@ textarea:focus {
   font-weight: 700;
   margin-right: 8px;
   min-width: 46px;
-}
-
-.note-item.selected {
-  background: var(--panel);
-  border-color: var(--accent);
 }
 
 .editor-pane {

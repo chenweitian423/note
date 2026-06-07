@@ -144,7 +144,8 @@ export function NoteShell() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [showArchived, setShowArchived] = useState(false);
-  const [noteDeleteTarget, setNoteDeleteTarget] = useState<Note | null>(null);
+  const [noteDeleteTarget, setNoteDeleteTarget] = useState<Note[] | null>(null);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [codeLanguage, setCodeLanguage] = useState("bash");
   const [activeMobilePane, setActiveMobilePane] = useState<"list" | "editor" | "preview">("editor");
@@ -166,6 +167,10 @@ export function NoteShell() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectedNote = useMemo(() => notes.find((note) => note.id === selectedId) ?? null, [notes, selectedId]);
+  const checkedNotes = useMemo(
+    () => notes.filter((note) => selectedNoteIds.includes(note.id)),
+    [notes, selectedNoteIds]
+  );
   const loadedSnapshot = useRef<{ id: string; title: string; content: string } | null>(null);
   const notesRequestId = useRef(0);
   const dirtySinceSelect = useRef(false);
@@ -247,6 +252,7 @@ export function NoteShell() {
     if (nextSelected?.id !== selectedId) {
       setSelectedId(nextSelected?.id ?? "");
     }
+    setSelectedNoteIds((current) => current.filter((noteId) => nextNotes.some((note) => note.id === noteId)));
   }
 
   async function createNewNote() {
@@ -270,6 +276,7 @@ export function NoteShell() {
     setTitle(note.title);
     setContent(note.content);
     setActiveMobilePane("editor");
+    setSelectedNoteIds([]);
   }
 
   function selectNote(note: Note) {
@@ -279,10 +286,50 @@ export function NoteShell() {
     window.history.replaceState(null, "", url.toString());
   }
 
+  function toggleNoteSelection(noteId: string, checked: boolean) {
+    setSelectedNoteIds((current) => {
+      if (checked) {
+        return current.includes(noteId) ? current : [...current, noteId];
+      }
+      return current.filter((id) => id !== noteId);
+    });
+  }
+
+  function selectAllVisibleNotes(checked: boolean) {
+    setSelectedNoteIds(checked ? notes.map((note) => note.id) : []);
+  }
+
+  async function runBulkNoteAction(action: "archive" | "restore" | "delete", noteIds = selectedNoteIds) {
+    const uniqueNoteIds = Array.from(new Set(noteIds));
+    if (uniqueNoteIds.length === 0) return false;
+    const response = await fetch("/api/notes/bulk", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action, noteIds: uniqueNoteIds })
+    });
+    if (!response.ok) return false;
+    setNotes((current) => current.filter((note) => !uniqueNoteIds.includes(note.id)));
+    setSelectedNoteIds((current) => current.filter((noteId) => !uniqueNoteIds.includes(noteId)));
+    if (uniqueNoteIds.includes(selectedId)) {
+      setSelectedId("");
+    }
+    setSaveState("saved");
+    return true;
+  }
+
+  async function archiveSelectedNotes() {
+    await runBulkNoteAction("archive");
+  }
+
+  async function restoreSelectedNotes() {
+    await runBulkNoteAction("restore");
+  }
+
   async function archiveSelectedNote() {
     if (!selectedId) return;
     await fetch(`/api/notes/${selectedId}`, { method: "DELETE" });
     setNotes((current) => current.filter((note) => note.id !== selectedId));
+    setSelectedNoteIds((current) => current.filter((noteId) => noteId !== selectedId));
     setSelectedId("");
   }
 
@@ -295,18 +342,18 @@ export function NoteShell() {
     });
     if (!response.ok) return;
     setNotes((current) => current.filter((note) => note.id !== selectedId));
+    setSelectedNoteIds((current) => current.filter((noteId) => noteId !== selectedId));
     setSelectedId("");
     setSaveState("saved");
   }
 
   async function deleteSelectedNotePermanently() {
     if (!noteDeleteTarget) return;
-    const response = await fetch(`/api/notes/${noteDeleteTarget.id}?permanent=true`, { method: "DELETE" });
-    if (!response.ok) return;
-    setNotes((current) => current.filter((note) => note.id !== noteDeleteTarget.id));
-    if (selectedId === noteDeleteTarget.id) {
-      setSelectedId("");
-    }
+    const deleted = await runBulkNoteAction(
+      "delete",
+      noteDeleteTarget.map((note) => note.id)
+    );
+    if (!deleted) return;
     setNoteDeleteTarget(null);
   }
 
@@ -314,6 +361,7 @@ export function NoteShell() {
     const next = !showArchived;
     setShowArchived(next);
     setSelectedId("");
+    setSelectedNoteIds([]);
     void loadNotes(query, next);
   }
 
@@ -627,22 +675,65 @@ export function NoteShell() {
         />
         {showArchived ? <p className="status-line">归档箱：这些笔记没有删除，可恢复或永久删除。</p> : null}
         {importing ? <p className="status-line">正在导入...</p> : null}
+        {notes.length > 0 ? (
+          <div className="bulk-note-actions">
+            <label className="note-select-all">
+              <input
+                type="checkbox"
+                aria-label="选择全部可见笔记"
+                checked={selectedNoteIds.length > 0 && selectedNoteIds.length === notes.length}
+                onChange={(event) => selectAllVisibleNotes(event.target.checked)}
+              />
+              <span>已选 {selectedNoteIds.length}</span>
+            </label>
+            {showArchived ? (
+              <>
+                <button
+                  className="text-action"
+                  disabled={selectedNoteIds.length === 0}
+                  onClick={restoreSelectedNotes}
+                >
+                  批量恢复
+                </button>
+                <button
+                  className="text-action danger-action"
+                  disabled={selectedNoteIds.length === 0}
+                  onClick={() => setNoteDeleteTarget(checkedNotes)}
+                >
+                  批量永久删除
+                </button>
+              </>
+            ) : (
+              <button className="text-action" disabled={selectedNoteIds.length === 0} onClick={archiveSelectedNotes}>
+                批量归档
+              </button>
+            )}
+          </div>
+        ) : null}
         <div className="note-list">
           {notes.map((note) => (
-            <button
-              key={note.id}
-              className={note.id === selectedId ? "note-item selected" : "note-item"}
-              onClick={() => {
-                selectNote(note);
-                setActiveMobilePane("editor");
-              }}
-            >
-              <strong>
-                <span className="note-number">{note.noteNumber}</span>
-                {note.title}
-              </strong>
-              <span>{new Date(note.updatedAt).toLocaleString("zh-CN")}</span>
-            </button>
+            <div key={note.id} className={note.id === selectedId ? "note-row selected" : "note-row"}>
+              <input
+                type="checkbox"
+                className="note-checkbox"
+                aria-label={`选择 ${note.title}`}
+                checked={selectedNoteIds.includes(note.id)}
+                onChange={(event) => toggleNoteSelection(note.id, event.target.checked)}
+              />
+              <button
+                className="note-item"
+                onClick={() => {
+                  selectNote(note);
+                  setActiveMobilePane("editor");
+                }}
+              >
+                <strong>
+                  <span className="note-number">{note.noteNumber}</span>
+                  {note.title}
+                </strong>
+                <span>{new Date(note.updatedAt).toLocaleString("zh-CN")}</span>
+              </button>
+            </div>
           ))}
         </div>
       </aside>
@@ -669,7 +760,7 @@ export function NoteShell() {
                   <button title="恢复" aria-label="恢复归档" onClick={restoreSelectedNote}>
                     <ArchiveRestore size={18} />
                   </button>
-                  <button title="永久删除" aria-label="永久删除笔记" onClick={() => setNoteDeleteTarget(selectedNote)}>
+                  <button title="永久删除" aria-label="永久删除笔记" onClick={() => setNoteDeleteTarget([selectedNote])}>
                     <Trash2 size={18} />
                   </button>
                 </>
@@ -907,8 +998,15 @@ export function NoteShell() {
             <div className="api-key-list">
               <article className="api-key-item compact">
                 <div className="api-key-meta">
-                  <strong>{noteDeleteTarget.title}</strong>
-                  <span>编号 {noteDeleteTarget.noteNumber}</span>
+                  <strong>
+                    {noteDeleteTarget.length === 1 ? noteDeleteTarget[0].title : `将永久删除 ${noteDeleteTarget.length} 篇笔记`}
+                  </strong>
+                  {noteDeleteTarget.slice(0, 5).map((note) => (
+                    <span key={note.id}>
+                      {note.noteNumber} {note.title}
+                    </span>
+                  ))}
+                  {noteDeleteTarget.length > 5 ? <span>还有 {noteDeleteTarget.length - 5} 篇未显示</span> : null}
                   <span>永久删除后不可恢复，相关附件记录也会一并清理。</span>
                 </div>
               </article>

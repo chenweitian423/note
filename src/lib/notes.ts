@@ -191,14 +191,32 @@ export function archiveNote(db: Database, noteId: string): void {
   run(db, "update notes set archivedAt = ?, updatedAt = ? where id = ?", [timestamp, timestamp, noteId]);
 }
 
+export function archiveNotes(db: Database, noteIds: string[]): void {
+  for (const noteId of noteIds) {
+    archiveNote(db, noteId);
+  }
+}
+
 export function restoreNote(db: Database, noteId: string): void {
   run(db, "update notes set archivedAt = null, updatedAt = ? where id = ?", [now(), noteId]);
+}
+
+export function restoreNotes(db: Database, noteIds: string[]): void {
+  for (const noteId of noteIds) {
+    restoreNote(db, noteId);
+  }
 }
 
 export function deleteNote(db: Database, noteId: string): void {
   run(db, "delete from note_tags where noteId = ?", [noteId]);
   run(db, "delete from attachments where noteId = ?", [noteId]);
   run(db, "delete from notes where id = ?", [noteId]);
+}
+
+export function deleteNotes(db: Database, noteIds: string[]): void {
+  for (const noteId of noteIds) {
+    deleteNote(db, noteId);
+  }
 }
 
 export function createTag(db: Database, input: { name: string; color: string; id?: string }): Tag {

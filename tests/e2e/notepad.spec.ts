@@ -70,7 +70,7 @@ test("archive box restores notes and permanently deletes archived notes", async 
   const noteTitle = "Archive flow note";
   let permanentDeleteRequests = 0;
   page.on("request", (request) => {
-    if (request.method() === "DELETE" && request.url().includes("/api/notes/") && request.url().includes("permanent=true")) {
+    if (request.method() === "POST" && request.url().includes("/api/notes/bulk") && request.postData()?.includes('"delete"')) {
       permanentDeleteRequests += 1;
     }
   });
