@@ -4,7 +4,7 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.32`
+- 当前版本：`0.4.33`
 - 当前稳定版基线：`v0.4.26`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
