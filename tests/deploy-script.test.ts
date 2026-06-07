@@ -17,6 +17,8 @@ describe("deployment script", () => {
     expect(script).toContain("EXPECTED_VERSION");
     expect(script).toContain("package.json");
     expect(script).toContain("python3 -c");
+    expect(script).toContain("printf '%s'");
+    expect(script).toContain("json.load(sys.stdin)");
     expect(script).toContain("data.get");
     expect(script).toContain("version");
     expect(script).toContain("EXPECTED_VERSION");
@@ -31,6 +33,8 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("$ExpectedVersion");
     expect(powershellScript).toContain("package.json");
     expect(powershellScript).toContain("python3 -c");
+    expect(powershellScript).toContain("printf '%s'");
+    expect(powershellScript).toContain("json.load(sys.stdin)");
     expect(powershellScript).toContain("data.get");
     expect(powershellScript).toContain("version");
     expect(powershellScript).toContain("EXPECTED_VERSION");

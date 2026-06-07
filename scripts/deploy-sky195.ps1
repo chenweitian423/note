@@ -48,7 +48,7 @@ docker compose -p online-notepad up -d --build
 export EXPECTED_VERSION='__EXPECTED_VERSION__'
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
   HEALTH_JSON="$(curl -fsS http://127.0.0.1:31300/api/health 2>/dev/null || true)"
-  if [ -n "${HEALTH_JSON}" ] && HEALTH_JSON="${HEALTH_JSON}" python3 -c 'import json, os; data=json.loads(os.environ["HEALTH_JSON"]); raise SystemExit(0 if data.get("ok") and data.get("version") == os.environ["EXPECTED_VERSION"] else 1)' 2>/dev/null; then
+  if [ -n "${HEALTH_JSON}" ] && printf '%s' "${HEALTH_JSON}" | python3 -c 'import json, os, sys; data=json.load(sys.stdin); raise SystemExit(0 if data.get("ok") and data.get("version") == os.environ["EXPECTED_VERSION"] else 1)' 2>/dev/null; then
     printf '%s\n' "${HEALTH_JSON}"
     exit 0
   fi
@@ -56,7 +56,7 @@ for attempt in 1 2 3 4 5 6 7 8 9 10; do
 done
 HEALTH_JSON="$(curl -fsS http://127.0.0.1:31300/api/health)"
 printf '%s\n' "${HEALTH_JSON}"
-HEALTH_JSON="${HEALTH_JSON}" python3 -c 'import json, os; data=json.loads(os.environ["HEALTH_JSON"]); raise SystemExit(0 if data.get("ok") and data.get("version") == os.environ["EXPECTED_VERSION"] else 1)'
+printf '%s' "${HEALTH_JSON}" | python3 -c 'import json, os, sys; data=json.load(sys.stdin); raise SystemExit(0 if data.get("ok") and data.get("version") == os.environ["EXPECTED_VERSION"] else 1)'
 '@
 
 $RemoteScript = $RemoteScript.Replace("__APP_DIR__", $AppDir).Replace("__ENV_FILE__", $EnvFile).Replace("__EXPECTED_VERSION__", $ExpectedVersion)
