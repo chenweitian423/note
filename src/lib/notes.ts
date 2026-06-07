@@ -135,12 +135,14 @@ export function getNoteByNumber(db: Database, noteNumber: string): NoteWithMeta 
 
 export function listNotes(
   db: Database,
-  filters: { query?: string; includeArchived?: boolean; tagId?: string } = {}
+  filters: { query?: string; includeArchived?: boolean; archiveOnly?: boolean; tagId?: string } = {}
 ): NoteWithMeta[] {
   const clauses: string[] = [];
   const params: string[] = [];
 
-  if (!filters.includeArchived) {
+  if (filters.archiveOnly) {
+    clauses.push("n.archivedAt is not null");
+  } else if (!filters.includeArchived) {
     clauses.push("n.archivedAt is null");
   }
   if (filters.query) {
@@ -185,10 +187,17 @@ export function updateNote(
 }
 
 export function archiveNote(db: Database, noteId: string): void {
-  run(db, "update notes set archivedAt = ?, updatedAt = ? where id = ?", [now(), now(), noteId]);
+  const timestamp = now();
+  run(db, "update notes set archivedAt = ?, updatedAt = ? where id = ?", [timestamp, timestamp, noteId]);
+}
+
+export function restoreNote(db: Database, noteId: string): void {
+  run(db, "update notes set archivedAt = null, updatedAt = ? where id = ?", [now(), noteId]);
 }
 
 export function deleteNote(db: Database, noteId: string): void {
+  run(db, "delete from note_tags where noteId = ?", [noteId]);
+  run(db, "delete from attachments where noteId = ?", [noteId]);
   run(db, "delete from notes where id = ?", [noteId]);
 }
 

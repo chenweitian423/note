@@ -65,3 +65,57 @@ test("backup deletion requires in-app confirmation", async ({ page }) => {
   await expect(confirmDialog).toBeHidden();
   expect(deleteRequests).toBe(1);
 });
+
+test("archive box restores notes and permanently deletes archived notes", async ({ page }) => {
+  const noteTitle = "Archive flow note";
+  let permanentDeleteRequests = 0;
+  page.on("request", (request) => {
+    if (request.method() === "DELETE" && request.url().includes("/api/notes/") && request.url().includes("permanent=true")) {
+      permanentDeleteRequests += 1;
+    }
+  });
+
+  await login(page);
+  await page.locator(".topbar").getByRole("button", { name: "新建笔记" }).click();
+  const titleInput = page.getByRole("textbox", { name: "标题", exact: true });
+  await expect(titleInput).toHaveValue("未命名笔记");
+  await page.waitForLoadState("networkidle");
+  const saveResponse = page.waitForResponse(async (response) => {
+    if (!response.url().includes("/api/notes/") || response.request().method() !== "PATCH" || !response.ok()) {
+      return false;
+    }
+    const data = (await response.json()) as { note?: { title?: string } };
+    return data.note?.title === noteTitle;
+  });
+  await titleInput.fill(noteTitle);
+  await expect(titleInput).toHaveValue(noteTitle);
+  await page.getByRole("textbox", { name: "正文", exact: true }).fill("Archive flow content");
+  await saveResponse;
+  await expect(page.getByText("已保存")).toBeVisible({ timeout: 3000 });
+  await expect(page.getByRole("button", { name: new RegExp(noteTitle) })).toBeVisible();
+
+  await page.getByRole("button", { name: "归档", exact: true }).click();
+  await expect(page.getByRole("button", { name: new RegExp(noteTitle) })).toHaveCount(0);
+
+  await page.locator(".topbar").getByRole("button", { name: "归档箱" }).click();
+  await expect(page.getByText("归档箱：这些笔记没有删除，可恢复或永久删除。")).toBeVisible();
+  await page.getByRole("button", { name: new RegExp(noteTitle) }).click();
+  await page.getByRole("button", { name: "恢复归档" }).click();
+  await expect(page.getByRole("button", { name: new RegExp(noteTitle) })).toHaveCount(0);
+
+  await page.locator(".topbar").getByRole("button", { name: "返回当前笔记" }).click();
+  await expect(page.getByRole("button", { name: new RegExp(noteTitle) })).toBeVisible();
+
+  await page.getByRole("button", { name: new RegExp(noteTitle) }).click();
+  await page.getByRole("button", { name: "归档", exact: true }).click();
+  await page.locator(".topbar").getByRole("button", { name: "归档箱" }).click();
+  await page.getByRole("button", { name: new RegExp(noteTitle) }).click();
+  await page.getByRole("button", { name: "永久删除笔记" }).click();
+  const confirmDialog = page.getByRole("dialog", { name: "确认删除笔记" });
+  await expect(confirmDialog).toBeVisible();
+  await expect(confirmDialog.getByText("永久删除后不可恢复")).toBeVisible();
+  await confirmDialog.getByRole("button", { name: "确认删除", exact: true }).click();
+  await expect(confirmDialog).toBeHidden();
+  await expect(page.getByRole("button", { name: new RegExp(noteTitle) })).toHaveCount(0);
+  expect(permanentDeleteRequests).toBe(1);
+});

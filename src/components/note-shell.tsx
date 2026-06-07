@@ -1,8 +1,9 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
+  ArchiveRestore,
   Bold,
   Check,
   Code2,
@@ -53,6 +54,7 @@ type Note = {
   title: string;
   content: string;
   updatedAt: string;
+  archivedAt: string | null;
   tags: Tag[];
   attachments: Attachment[];
 };
@@ -141,6 +143,8 @@ export function NoteShell() {
   const [query, setQuery] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [noteDeleteTarget, setNoteDeleteTarget] = useState<Note | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [codeLanguage, setCodeLanguage] = useState("bash");
   const [activeMobilePane, setActiveMobilePane] = useState<"list" | "editor" | "preview">("editor");
@@ -162,25 +166,36 @@ export function NoteShell() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectedNote = useMemo(() => notes.find((note) => note.id === selectedId) ?? null, [notes, selectedId]);
-  const firstLoad = useRef(true);
+  const loadedSnapshot = useRef<{ id: string; title: string; content: string } | null>(null);
+  const notesRequestId = useRef(0);
+  const dirtySinceSelect = useRef(false);
 
   useEffect(() => {
     void loadNotes();
   }, []);
 
-  useEffect(() => {
-    if (selectedNote) {
-      firstLoad.current = true;
+  useLayoutEffect(() => {
+    if (selectedNote && loadedSnapshot.current?.id !== selectedNote.id) {
+      dirtySinceSelect.current = false;
+      loadedSnapshot.current = {
+        id: selectedNote.id,
+        title: selectedNote.title,
+        content: selectedNote.content
+      };
       setTitle(selectedNote.title);
       setContent(selectedNote.content);
-      queueMicrotask(() => {
-        firstLoad.current = false;
-      });
     }
   }, [selectedNote?.id]);
 
   useEffect(() => {
-    if (!selectedId || firstLoad.current) return;
+    if (!selectedId) return;
+    if (
+      loadedSnapshot.current?.id === selectedId &&
+      loadedSnapshot.current.title === title &&
+      loadedSnapshot.current.content === content
+    ) {
+      return;
+    }
     setSaveState("saving");
     const handle = window.setTimeout(async () => {
       const response = await fetch(`/api/notes/${selectedId}`, {
@@ -194,29 +209,48 @@ export function NoteShell() {
       }
       const data = (await response.json()) as { note: Note };
       const nextNote = normalizeNote(data.note);
+      loadedSnapshot.current = {
+        id: nextNote.id,
+        title: nextNote.title,
+        content: nextNote.content
+      };
+      dirtySinceSelect.current = false;
       setNotes((current) => current.map((note) => (note.id === nextNote.id ? nextNote : note)));
       setSaveState("saved");
     }, 600);
     return () => window.clearTimeout(handle);
   }, [title, content, selectedId]);
 
-  async function loadNotes(search = query) {
-    const params = search ? `?q=${encodeURIComponent(search)}` : "";
-    const response = await fetch(`/api/notes${params}`);
+  async function loadNotes(search = query, archivedMode = showArchived) {
+    const requestId = ++notesRequestId.current;
+    const params = new URLSearchParams();
+    if (search) {
+      params.set("q", search);
+    }
+    if (archivedMode) {
+      params.set("archived", "true");
+    }
+    const queryString = params.toString();
+    const response = await fetch(`/api/notes${queryString ? `?${queryString}` : ""}`);
     if (!response.ok) return;
     const data = (await response.json()) as { notes: Note[] };
+    if (requestId !== notesRequestId.current) {
+      return;
+    }
     const nextNotes = data.notes.map(normalizeNote);
     setNotes(nextNotes);
     const requestedNoteNumber = new URLSearchParams(window.location.search).get("note");
     const requestedNote = requestedNoteNumber
       ? nextNotes.find((note) => note.noteNumber.toLowerCase() === requestedNoteNumber.toLowerCase())
       : null;
-    if (!selectedId && (requestedNote ?? nextNotes[0])) {
-      setSelectedId((requestedNote ?? nextNotes[0]).id);
+    const nextSelected = requestedNote ?? nextNotes.find((note) => note.id === selectedId) ?? nextNotes[0] ?? null;
+    if (nextSelected?.id !== selectedId) {
+      setSelectedId(nextSelected?.id ?? "");
     }
   }
 
   async function createNewNote() {
+    notesRequestId.current += 1;
     const response = await fetch("/api/notes", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -227,6 +261,14 @@ export function NoteShell() {
     const note = normalizeNote(data.note);
     setNotes((current) => [note, ...current]);
     selectNote(note);
+    dirtySinceSelect.current = false;
+    loadedSnapshot.current = {
+      id: note.id,
+      title: note.title,
+      content: note.content
+    };
+    setTitle(note.title);
+    setContent(note.content);
     setActiveMobilePane("editor");
   }
 
@@ -242,6 +284,37 @@ export function NoteShell() {
     await fetch(`/api/notes/${selectedId}`, { method: "DELETE" });
     setNotes((current) => current.filter((note) => note.id !== selectedId));
     setSelectedId("");
+  }
+
+  async function restoreSelectedNote() {
+    if (!selectedId) return;
+    const response = await fetch(`/api/notes/${selectedId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ archived: false })
+    });
+    if (!response.ok) return;
+    setNotes((current) => current.filter((note) => note.id !== selectedId));
+    setSelectedId("");
+    setSaveState("saved");
+  }
+
+  async function deleteSelectedNotePermanently() {
+    if (!noteDeleteTarget) return;
+    const response = await fetch(`/api/notes/${noteDeleteTarget.id}?permanent=true`, { method: "DELETE" });
+    if (!response.ok) return;
+    setNotes((current) => current.filter((note) => note.id !== noteDeleteTarget.id));
+    if (selectedId === noteDeleteTarget.id) {
+      setSelectedId("");
+    }
+    setNoteDeleteTarget(null);
+  }
+
+  function toggleArchiveBox() {
+    const next = !showArchived;
+    setShowArchived(next);
+    setSelectedId("");
+    void loadNotes(query, next);
   }
 
   async function logout() {
@@ -528,6 +601,14 @@ export function NoteShell() {
           <button title="导出" aria-label="导出" onClick={exportZip}>
             <Download size={18} />
           </button>
+          <button
+            title={showArchived ? "返回当前笔记" : "归档箱"}
+            aria-label={showArchived ? "返回当前笔记" : "归档箱"}
+            className={showArchived ? "active-tool" : undefined}
+            onClick={toggleArchiveBox}
+          >
+            <Archive size={18} />
+          </button>
           <button title="设置" aria-label="设置和状态" onClick={openSettingsDialog}>
             <Settings size={18} />
           </button>
@@ -541,9 +622,10 @@ export function NoteShell() {
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
-            void loadNotes(event.target.value);
+            void loadNotes(event.target.value, showArchived);
           }}
         />
+        {showArchived ? <p className="status-line">归档箱：这些笔记没有删除，可恢复或永久删除。</p> : null}
         {importing ? <p className="status-line">正在导入...</p> : null}
         <div className="note-list">
           {notes.map((note) => (
@@ -574,10 +656,28 @@ export function NoteShell() {
         {selectedNote ? (
           <>
             <div className="editor-header">
-              <input aria-label="标题" value={title} onChange={(event) => setTitle(event.target.value)} />
-              <button title="归档" aria-label="归档" onClick={archiveSelectedNote}>
-                <Archive size={18} />
-              </button>
+              <input
+                aria-label="标题"
+                value={title}
+                onChange={(event) => {
+                  dirtySinceSelect.current = true;
+                  setTitle(event.target.value);
+                }}
+              />
+              {showArchived ? (
+                <>
+                  <button title="恢复" aria-label="恢复归档" onClick={restoreSelectedNote}>
+                    <ArchiveRestore size={18} />
+                  </button>
+                  <button title="永久删除" aria-label="永久删除笔记" onClick={() => setNoteDeleteTarget(selectedNote)}>
+                    <Trash2 size={18} />
+                  </button>
+                </>
+              ) : (
+                <button title="归档" aria-label="归档" onClick={archiveSelectedNote}>
+                  <Archive size={18} />
+                </button>
+              )}
             </div>
             <div className="formatbar">
               <button title="标题" aria-label="插入标题" onClick={() => insertSnippet("# ", "")}>
@@ -616,7 +716,10 @@ export function NoteShell() {
               ref={textareaRef}
               aria-label="正文"
               value={content}
-              onChange={(event) => setContent(event.target.value)}
+              onChange={(event) => {
+                dirtySinceSelect.current = true;
+                setContent(event.target.value);
+              }}
             />
           </>
         ) : (
@@ -786,6 +889,35 @@ export function NoteShell() {
                 取消
               </button>
               <button className="text-action danger-action" onClick={deleteBackupArchive}>
+                确认删除
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+      {noteDeleteTarget ? (
+        <div className="modal-backdrop" role="presentation">
+          <section className="api-key-dialog confirm-dialog" role="dialog" aria-modal="true" aria-label="确认删除笔记">
+            <div className="dialog-header">
+              <h2>确认删除笔记</h2>
+              <button aria-label="关闭确认删除笔记" onClick={() => setNoteDeleteTarget(null)}>
+                ×
+              </button>
+            </div>
+            <div className="api-key-list">
+              <article className="api-key-item compact">
+                <div className="api-key-meta">
+                  <strong>{noteDeleteTarget.title}</strong>
+                  <span>编号 {noteDeleteTarget.noteNumber}</span>
+                  <span>永久删除后不可恢复，相关附件记录也会一并清理。</span>
+                </div>
+              </article>
+            </div>
+            <div className="api-key-actions confirm-actions">
+              <button className="text-action" onClick={() => setNoteDeleteTarget(null)}>
+                取消
+              </button>
+              <button className="text-action danger-action" onClick={deleteSelectedNotePermanently}>
                 确认删除
               </button>
             </div>

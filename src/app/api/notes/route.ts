@@ -19,6 +19,8 @@ export async function GET(request: Request) {
   const notes = listNotes(db, {
     query: url.searchParams.get("q") ?? undefined,
     includeArchived: url.searchParams.get("includeArchived") === "true",
+    archiveOnly:
+      url.searchParams.get("archived") === "true" || url.searchParams.get("archiveOnly") === "true",
     tagId: url.searchParams.get("tagId") ?? undefined
   });
   return NextResponse.json({ notes });

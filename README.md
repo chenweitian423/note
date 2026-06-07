@@ -4,7 +4,7 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.29`
+- 当前版本：`0.4.30`
 - 当前稳定版基线：`v0.4.26`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
@@ -116,7 +116,7 @@ HOST=your-ssh-host rtk bash scripts/deploy-remote.sh
 应用支持手动和可选定时备份。备份文件保存到 `/data/exports`，格式与迁移导出的 ZIP 一致。
 新导出的 ZIP 会在 `manifest.json` 中记录 `notes.json` 的 SHA-256 校验值，导入时会拒绝内容被篡改或损坏的备份。
 
-- 网页入口：点击左上角数据库图标打开备份管理。
+- 网页入口：点击左上角设置图标，在设置弹窗中打开备份管理。
 - 手动创建：`POST /api/backups`
 - 列出备份：`GET /api/backups`
 - 下载最新备份：`GET /api/backups/latest`
