@@ -15,6 +15,8 @@ describe("README deployment guide", () => {
     expect(readme).toContain("curl -fsS http://127.0.0.1:31300/api/health");
     expect(readme).toContain("scripts/deploy-sky195.ps1");
     expect(readme).toContain("ALLOW_DIRTY_DEPLOY=1");
+    expect(readme).toContain("当前稳定版");
+    expect(readme).toContain("npm run e2e");
   });
 
   it("keeps the displayed current version in sync with package.json", () => {
