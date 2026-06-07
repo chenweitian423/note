@@ -19,6 +19,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare Docker Compose env file
+        run: |
+          sudo mkdir -p /opt/online-notepad
+          sudo tee /opt/online-notepad/.env >/dev/null <<'EOF'
+          APP_PASSWORD=ci-placeholder
+          AUTH_SECRET=ci-placeholder-secret-with-at-least-32-chars
+          APP_PORT=31300
+          MAX_ATTACHMENT_MB=20
+          SECURE_COOKIES=false
+          EOF
+
       - name: Validate Docker Compose config
         run: docker compose config
 

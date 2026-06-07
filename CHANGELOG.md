@@ -2,6 +2,10 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.23 - 2026-06-07
+
+- 修复 GitHub Actions 中新增的 `docker compose config` 作业缺少 `/opt/online-notepad/.env` 导致失败的问题，CI 会先创建占位环境文件再校验 Compose 配置。
+
 ## 0.4.22 - 2026-06-07
 
 - README 当前版本号改为由测试守护，避免文档显示版本落后于 `package.json`。
