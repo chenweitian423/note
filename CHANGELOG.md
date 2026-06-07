@@ -2,6 +2,12 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.17 - 2026-06-07
+
+- GitHub Actions Playwright 工作流补充 `npm run test` 和 `npm run build`，让单元测试、类型检查和生产构建在 E2E 前先行验证。
+- Next.js 开发配置允许 `127.0.0.1` 作为 dev origin，消除 Playwright E2E 中 `_next/*` 资源跨 origin warning。
+- E2E 测试改用 `getByRole` / `getByLabel` 语义化定位关键控件，减少按钮顺序或 CSS class 变化导致的误报。
+
 ## 0.4.16 - 2026-06-07
 
 - 修复 Playwright 1.60 E2E 中备份删除测试的严格模式失败，删除备份时按按钮语义精确定位，避免和“校验这份备份”按钮冲突。

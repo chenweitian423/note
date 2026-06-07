@@ -768,7 +768,7 @@ export function NoteShell() {
           <section className="api-key-dialog confirm-dialog" role="dialog" aria-modal="true" aria-label="确认删除备份">
             <div className="dialog-header">
               <h2>确认删除</h2>
-              <button aria-label="取消" onClick={() => setBackupDeleteTarget(null)}>
+              <button aria-label="关闭确认删除" onClick={() => setBackupDeleteTarget(null)}>
                 ×
               </button>
             </div>

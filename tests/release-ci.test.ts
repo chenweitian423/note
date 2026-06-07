@@ -17,4 +17,31 @@ describe("release verification workflow", () => {
     expect(releaseProcess).toContain(PLAYWRIGHT_IMAGE);
     expect(releaseProcess).toContain("rtk npm run e2e");
   });
+
+  it("runs test, build, and e2e checks in GitHub Actions", () => {
+    const workflow = fs.readFileSync(path.join(process.cwd(), ".github/workflows/playwright.yml"), "utf8");
+
+    expect(workflow).toContain("npm run test");
+    expect(workflow).toContain("npm run build");
+    expect(workflow).toContain("npm run e2e");
+  });
+
+  it("allows Playwright dev-server origins in Next config", () => {
+    const nextConfig = fs.readFileSync(path.join(process.cwd(), "next.config.ts"), "utf8");
+
+    expect(nextConfig).toContain("allowedDevOrigins");
+    expect(nextConfig).toContain("127.0.0.1");
+  });
+
+  it("keeps e2e selectors semantic for primary controls", () => {
+    const e2e = fs.readFileSync(path.join(process.cwd(), "tests/e2e/notepad.spec.ts"), "utf8");
+
+    expect(e2e).not.toContain(".topbar button");
+    expect(e2e).not.toContain(".settings-actions button");
+    expect(e2e).not.toContain(".api-key-create button");
+    expect(e2e).not.toContain(".confirm-actions button");
+    expect(e2e).not.toContain(".danger-action");
+    expect(e2e).toContain("getByRole");
+    expect(e2e).toContain("getByLabel");
+  });
 });
