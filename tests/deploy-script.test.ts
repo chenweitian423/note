@@ -32,6 +32,7 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("curl -fsS http://127.0.0.1:31300/api/health");
     expect(powershellScript).toContain("$ExpectedVersion");
     expect(powershellScript).toContain("package.json");
+    expect(powershellScript).toContain('ssh $HostName "bash -s"');
     expect(powershellScript).toContain("python3 -c");
     expect(powershellScript).toContain("printf '%s'");
     expect(powershellScript).toContain("json.load(sys.stdin)");

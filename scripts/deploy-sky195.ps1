@@ -60,6 +60,6 @@ printf '%s' "${HEALTH_JSON}" | python3 -c 'import json, os, sys; data=json.load(
 '@
 
 $RemoteScript = $RemoteScript.Replace("__APP_DIR__", $AppDir).Replace("__ENV_FILE__", $EnvFile).Replace("__EXPECTED_VERSION__", $ExpectedVersion)
-ssh $HostName $RemoteScript
+$RemoteScript | ssh $HostName "bash -s"
 
 Remove-Item -LiteralPath $Archive -Force
