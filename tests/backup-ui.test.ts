@@ -82,4 +82,14 @@ describe("backup manager ui", () => {
     expect(source).toContain("可恢复");
     expect(source).toContain("/verify");
   });
+
+  it("keeps common Chinese UI labels readable", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
+
+    expect(source).toContain("新建笔记");
+    expect(source).toContain("搜索标题或正文");
+    expect(source).toContain("开始记录");
+    expect(source).toContain("上传附件");
+    expect(source).not.toMatch(/[€�]/);
+  });
 });

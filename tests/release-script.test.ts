@@ -14,6 +14,8 @@ describe("release helper script", () => {
     expect(script).toContain("npm run e2e");
     expect(script).toContain("git tag -a");
     expect(script).toContain("git push origin");
+    expect(script).toContain("git ls-remote origin");
+    expect(script).toContain("refs/tags/$tag");
     expect(script).toContain("git status --porcelain");
   });
 });

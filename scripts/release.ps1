@@ -64,3 +64,10 @@ if (-not $Yes) {
 
 Run-Step "git tag -a $tag" { git tag -a $tag -m "Release $tag" }
 Run-Step "git push origin $tag" { git push origin $tag }
+
+$remoteTag = git ls-remote origin "refs/tags/$tag"
+if (-not $remoteTag) {
+  throw "Pushed tag $tag, but GitHub did not report refs/tags/$tag."
+}
+
+Write-Host "Release tag $tag is visible on GitHub."
