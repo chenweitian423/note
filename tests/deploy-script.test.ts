@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+const privateHostAlias = ["sky", "195"].join("");
+
 describe("deployment script", () => {
   it("deploys code under /opt while keeping secrets outside the app directory", () => {
     const script = fs.readFileSync(path.join(process.cwd(), "scripts/deploy-remote.sh"), "utf8");
@@ -27,7 +29,7 @@ describe("deployment script", () => {
     expect(script).toContain("Deployment summary");
     expect(script).toContain("git rev-parse --short HEAD");
     expect(script).toContain("docker compose -p online-notepad ps");
-    expect(script).not.toContain("sky195");
+    expect(script).not.toContain(privateHostAlias);
 
     expect(powershellScript).toContain('$BaseDir = "/opt/online-notepad"');
     expect(powershellScript).toContain('$AppDir = "$BaseDir/app"');
@@ -52,6 +54,6 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("docker compose -p online-notepad ps");
     expect(powershellScript).toContain('Replace("`r`n", "`n")');
     expect(powershellScript).toContain("tr -d '\\r' | bash -s");
-    expect(powershellScript).not.toContain("sky195");
+    expect(powershellScript).not.toContain(privateHostAlias);
   });
 });

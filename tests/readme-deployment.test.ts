@@ -2,6 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+const privateHostAlias = ["sky", "195"].join("");
+const privateDeployScript = ["deploy", "sky", "195"].join("-");
+
 describe("README deployment guide", () => {
   it("documents Docker Compose configuration and common operations for GitHub readers", () => {
     const readme = fs.readFileSync(path.join(process.cwd(), "README.md"), "utf8");
@@ -14,8 +17,8 @@ describe("README deployment guide", () => {
     expect(readme).toContain("docker compose -p online-notepad logs -f");
     expect(readme).toContain("curl -fsS http://127.0.0.1:31300/api/health");
     expect(readme).toContain("scripts/deploy-remote.ps1");
-    expect(readme).not.toContain("sky195");
-    expect(readme).not.toContain("deploy-sky195");
+    expect(readme).not.toContain(privateHostAlias);
+    expect(readme).not.toContain(privateDeployScript);
     expect(readme).toContain("ALLOW_DIRTY_DEPLOY=1");
     expect(readme).toContain("当前稳定版");
     expect(readme).toContain("npm run e2e");
@@ -34,7 +37,7 @@ describe("README deployment guide", () => {
 
     expect(releaseProcess).toContain("ALLOW_DIRTY_DEPLOY=1");
     expect(releaseProcess).toContain("脏工作区");
-    expect(releaseProcess).not.toContain("sky195");
-    expect(releaseProcess).not.toContain("deploy-sky195");
+    expect(releaseProcess).not.toContain(privateHostAlias);
+    expect(releaseProcess).not.toContain(privateDeployScript);
   });
 });

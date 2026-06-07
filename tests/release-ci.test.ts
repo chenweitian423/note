@@ -3,6 +3,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const PLAYWRIGHT_IMAGE = "mcr.microsoft.com/playwright:v1.60.0-noble";
+const privateHostAlias = ["sky", "195"].join("");
+const privateDeployScript = ["deploy", "sky", "195"].join("-");
+const privateRepoOwner = ["chen", "weitian", "423"].join("");
 
 describe("release verification workflow", () => {
   it("uses a broad CI workflow name so notification emails describe all jobs", () => {
@@ -64,9 +67,9 @@ describe("release verification workflow", () => {
 
     for (const file of publicFiles) {
       const source = fs.readFileSync(path.join(process.cwd(), file), "utf8");
-      expect(source).not.toContain("sky195");
-      expect(source).not.toContain("deploy-sky195");
-      expect(source).not.toContain("chenweitian423");
+      expect(source).not.toContain(privateHostAlias);
+      expect(source).not.toContain(privateDeployScript);
+      expect(source).not.toContain(privateRepoOwner);
     }
   });
 });
