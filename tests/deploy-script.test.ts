@@ -39,7 +39,7 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("package.json");
     expect(powershellScript).toContain("ALLOW_DIRTY_DEPLOY");
     expect(powershellScript).toContain("git status --porcelain");
-    expect(powershellScript).toContain('ssh $HostName "bash -s"');
+    expect(powershellScript).toContain(`ssh $HostName "tr -d '\\r' | bash -s"`);
     expect(powershellScript).toContain("python3 -c");
     expect(powershellScript).toContain("printf '%s'");
     expect(powershellScript).toContain("json.load(sys.stdin)");
@@ -50,5 +50,6 @@ describe("deployment script", () => {
     expect(powershellScript).toContain("git rev-parse --short HEAD");
     expect(powershellScript).toContain("docker compose -p online-notepad ps");
     expect(powershellScript).toContain('Replace("`r`n", "`n")');
+    expect(powershellScript).toContain("tr -d '\\r' | bash -s");
   });
 });

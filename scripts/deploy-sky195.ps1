@@ -75,6 +75,6 @@ docker compose -p online-notepad ps
 '@
 
 $RemoteScript = $RemoteScript.Replace("__APP_DIR__", $AppDir).Replace("__ENV_FILE__", $EnvFile).Replace("__EXPECTED_VERSION__", $ExpectedVersion).Replace("__LOCAL_COMMIT__", $LocalCommit).Replace("`r`n", "`n")
-$RemoteScript | ssh $HostName "bash -s"
+$RemoteScript | ssh $HostName "tr -d '\r' | bash -s"
 
 Remove-Item -LiteralPath $Archive -Force
