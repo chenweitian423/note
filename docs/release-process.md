@@ -17,7 +17,8 @@
 1. 修改 `package.json` 的 `version`。
 2. 同步修改 `package-lock.json` 根版本号。
 3. 在 `CHANGELOG.md` 顶部新增版本条目，写清日期和更新内容。
-4. 运行必要验证，例如：
+4. 同步检查并更新所有相关项目文档：`AGENTS.md`、`README.md`、`docs/release-process.md`、设计/计划文档以及受本次变更影响的使用说明。
+5. 运行必要验证，例如：
 
 ```bash
 rtk npm run test
