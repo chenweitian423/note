@@ -35,6 +35,22 @@ describe("release automation helpers", () => {
     expect(script).toContain("npm run build");
   });
 
+  it("lets release verification skip expensive layers or run a full Docker startup check", () => {
+    const script = fs.readFileSync(
+      path.join(process.cwd(), "scripts/release-verify.ps1"),
+      "utf8"
+    );
+
+    expect(script).toContain("[switch]$SkipE2E");
+    expect(script).toContain("[switch]$SkipDocker");
+    expect(script).toContain("[switch]$OnlyDocker");
+    expect(script).toContain("[switch]$DockerUp");
+    expect(script).toContain("Invoke-HealthCheck");
+    expect(script).toContain("up -d --build");
+    expect(script).toContain("down -v --remove-orphans");
+    expect(script).toContain("finally");
+  });
+
   it("checks AGENTS handoff metadata before releasing", () => {
     const script = fs.readFileSync(path.join(process.cwd(), "scripts/release.ps1"), "utf8");
     const handoffScript = fs.readFileSync(path.join(process.cwd(), "scripts/update-handoff.ps1"), "utf8");
