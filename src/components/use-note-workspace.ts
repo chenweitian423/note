@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { normalizeNote, type Note, type SaveState } from "./note-workspace-model";
 import { useApiKeyManager } from "./use-api-key-manager";
 import { useBackupManager } from "./use-backup-manager";
+import { useEditorActions } from "./use-editor-actions";
 
 export function useNoteWorkspace() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -28,6 +29,14 @@ export function useNoteWorkspace() {
   const dirtySinceSelect = useRef(false);
   const backupManager = useBackupManager({ loadNotes });
   const apiKeyManager = useApiKeyManager();
+  const editorActions = useEditorActions({
+    codeLanguage,
+    content,
+    loadNotes,
+    selectedId,
+    setContent,
+    textareaRef
+  });
 
   useEffect(() => {
     void loadNotes();
@@ -225,47 +234,6 @@ export function useNoteWorkspace() {
     window.location.href = "/login";
   }
 
-  function insertSnippet(before: string, after = "") {
-    const input = textareaRef.current;
-    if (!input) return;
-    const start = input.selectionStart;
-    const end = input.selectionEnd;
-    const selected = content.slice(start, end);
-    const next = `${content.slice(0, start)}${before}${selected || "文本"}${after}${content.slice(end)}`;
-    setContent(next);
-    requestAnimationFrame(() => input.focus());
-  }
-
-  function insertCodeBlock() {
-    const input = textareaRef.current;
-    if (!input) return;
-    const start = input.selectionStart;
-    const end = input.selectionEnd;
-    const selected = content.slice(start, end).trimEnd();
-    const code = selected || "在这里输入代码";
-    const prefix = start > 0 && !content.slice(0, start).endsWith("\n\n") ? "\n\n" : "";
-    const suffix = end < content.length && !content.slice(end).startsWith("\n\n") ? "\n\n" : "";
-    const block = `${prefix}\`\`\`${codeLanguage}\n${code}\n\`\`\`${suffix}`;
-    const next = `${content.slice(0, start)}${block}${content.slice(end)}`;
-    setContent(next);
-    requestAnimationFrame(() => input.focus());
-  }
-
-  async function exportZip() {
-    window.location.href = "/api/export";
-  }
-
-  async function uploadAttachment(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file || !selectedId) return;
-    const form = new FormData();
-    form.set("noteId", selectedId);
-    form.set("file", file);
-    await fetch("/api/attachments", { method: "POST", body: form });
-    await loadNotes();
-    event.target.value = "";
-  }
-
   return {
     notes,
     selectedId,
@@ -323,14 +291,14 @@ export function useNoteWorkspace() {
     deleteSelectedNotePermanently,
     toggleArchiveBox,
     logout,
-    insertSnippet,
-    insertCodeBlock,
-    exportZip,
+    insertSnippet: editorActions.insertSnippet,
+    insertCodeBlock: editorActions.insertCodeBlock,
+    exportZip: editorActions.exportZip,
     importZip: backupManager.importZip,
     restoreBackupZip: backupManager.restoreBackupZip,
     confirmImportZip: backupManager.confirmImportZip,
     cancelImportZip: backupManager.cancelImportZip,
-    uploadAttachment,
+    uploadAttachment: editorActions.uploadAttachment,
     openBackupDialog: backupManager.openBackupDialog,
     openSettingsDialog: backupManager.openSettingsDialog,
     createBackupArchive: backupManager.createBackupArchive,

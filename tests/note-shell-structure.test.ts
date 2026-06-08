@@ -16,6 +16,10 @@ describe("note shell structure", () => {
       path.join(process.cwd(), "src/components/use-api-key-manager.ts"),
       "utf8"
     );
+    const editorActionsHook = fs.readFileSync(
+      path.join(process.cwd(), "src/components/use-editor-actions.ts"),
+      "utf8"
+    );
     const workspaceToolbar = fs.readFileSync(
       path.join(process.cwd(), "src/components/workspace-toolbar.tsx"),
       "utf8"
@@ -49,6 +53,7 @@ describe("note shell structure", () => {
     expect(workspaceHook).toContain('from "./note-workspace-model"');
     expect(workspaceHook).toContain('from "./use-backup-manager"');
     expect(workspaceHook).toContain('from "./use-api-key-manager"');
+    expect(workspaceHook).toContain('from "./use-editor-actions"');
     expect(workspaceHook).not.toMatch(/\btype ImportPreview\s*=/);
     expect(workspaceHook).not.toMatch(/\basync function openBackupDialog\b/);
     expect(workspaceHook).not.toMatch(/\basync function loadBackups\b/);
@@ -56,6 +61,9 @@ describe("note shell structure", () => {
     expect(workspaceHook).not.toMatch(/\basync function openApiKeyDialog\b/);
     expect(workspaceHook).not.toMatch(/\basync function loadApiKeys\b/);
     expect(workspaceHook).not.toMatch(/\basync function createApiKey\b/);
+    expect(workspaceHook).not.toMatch(/\bfunction insertSnippet\b/);
+    expect(workspaceHook).not.toMatch(/\bfunction insertCodeBlock\b/);
+    expect(workspaceHook).not.toMatch(/\basync function uploadAttachment\b/);
     expect(workspaceModel).toContain("export type ImportPreview");
     expect(workspaceModel).toContain("export function normalizeNote");
     expect(workspaceModel).toContain("export function withoutSecret");
@@ -66,5 +74,8 @@ describe("note shell structure", () => {
     expect(apiKeyManagerHook).toContain("export function useApiKeyManager");
     expect(apiKeyManagerHook).toContain("async function openApiKeyDialog");
     expect(apiKeyManagerHook).toContain("async function createApiKey");
+    expect(editorActionsHook).toContain("export function useEditorActions");
+    expect(editorActionsHook).toContain("function insertSnippet");
+    expect(editorActionsHook).toContain("function insertCodeBlock");
   });
 });
