@@ -63,6 +63,7 @@ describe("backup manager ui", () => {
   it("shows backup statistics in the backup manager", () => {
     const source = readComponentSources([
       "src/components/note-dialogs-panel.tsx",
+      "src/components/use-backup-manager.ts",
       "src/components/use-note-workspace.ts"
     ]);
 
@@ -77,6 +78,7 @@ describe("backup manager ui", () => {
   it("shows auto backup status in the backup manager", () => {
     const source = readComponentSources([
       "src/components/note-dialogs-panel.tsx",
+      "src/components/use-backup-manager.ts",
       "src/components/use-note-workspace.ts"
     ]);
 
@@ -90,6 +92,7 @@ describe("backup manager ui", () => {
   it("previews zip imports before confirming restore", () => {
     const source = readComponentSources([
       "src/components/note-dialogs-panel.tsx",
+      "src/components/use-backup-manager.ts",
       "src/components/use-note-workspace.ts"
     ]);
 
@@ -103,6 +106,7 @@ describe("backup manager ui", () => {
   it("exposes backup verification in the backup manager", () => {
     const source = readComponentSources([
       "src/components/note-dialogs-panel.tsx",
+      "src/components/use-backup-manager.ts",
       "src/components/use-note-workspace.ts"
     ]);
 

@@ -3,17 +3,13 @@
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   normalizeNote,
-  summarizeBackupList,
   withoutSecret,
   type ApiKey,
-  type Backup,
-  type BackupSummary,
   type CreatedApiKey,
-  type HealthStatus,
-  type ImportPreview,
   type Note,
   type SaveState
 } from "./note-workspace-model";
+import { useBackupManager } from "./use-backup-manager";
 
 export function useNoteWorkspace() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -27,22 +23,11 @@ export function useNoteWorkspace() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [codeLanguage, setCodeLanguage] = useState("bash");
   const [activeMobilePane, setActiveMobilePane] = useState<"list" | "editor" | "preview">("editor");
-  const [importing, setImporting] = useState(false);
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [apiKeyName, setApiKeyName] = useState("curl");
   const [newApiKey, setNewApiKey] = useState<CreatedApiKey | null>(null);
   const [copiedApiKeyId, setCopiedApiKeyId] = useState("");
-  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
-  const [backups, setBackups] = useState<Backup[]>([]);
-  const [backupSummary, setBackupSummary] = useState<BackupSummary | null>(null);
-  const [backupDeleteTarget, setBackupDeleteTarget] = useState<Backup | null>(null);
-  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
-  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
-  const [backupVerifyResults, setBackupVerifyResults] = useState<Record<string, ImportPreview>>({});
-  const [backupStatus, setBackupStatus] = useState("");
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [health, setHealth] = useState<HealthStatus | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectedNote = useMemo(() => notes.find((note) => note.id === selectedId) ?? null, [notes, selectedId]);
   const checkedNotes = useMemo(
@@ -52,6 +37,7 @@ export function useNoteWorkspace() {
   const loadedSnapshot = useRef<{ id: string; title: string; content: string } | null>(null);
   const notesRequestId = useRef(0);
   const dirtySinceSelect = useRef(false);
+  const backupManager = useBackupManager({ loadNotes });
 
   useEffect(() => {
     void loadNotes();
@@ -279,63 +265,6 @@ export function useNoteWorkspace() {
     window.location.href = "/api/export";
   }
 
-  async function importZip(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setImporting(true);
-    const form = new FormData();
-    form.set("file", file);
-    const response = await fetch("/api/import/preview", { method: "POST", body: form });
-    const preview = (await response.json().catch(() => ({ valid: false, error: "ZIP 校验失败" }))) as ImportPreview;
-    setImporting(false);
-    setPendingImportFile(file);
-    setImportPreview(preview);
-    event.target.value = "";
-  }
-
-  async function restoreBackupZip(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setBackupStatus("正在校验备份 ZIP...");
-    const form = new FormData();
-    form.set("file", file);
-    const response = await fetch("/api/import/preview", { method: "POST", body: form });
-    const preview = (await response.json().catch(() => ({ valid: false, error: "ZIP 校验失败" }))) as ImportPreview;
-    event.target.value = "";
-    setPendingImportFile(file);
-    setImportPreview(preview);
-    if (!preview.valid) {
-      setBackupStatus(`校验失败：${preview.error}`);
-      return;
-    }
-    setBackupStatus("校验通过，等待确认导入");
-  }
-
-  async function confirmImportZip() {
-    if (!pendingImportFile) return;
-    setImporting(true);
-    const form = new FormData();
-    form.set("file", pendingImportFile);
-    const response = await fetch("/api/import", { method: "POST", body: form });
-    setImporting(false);
-    if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      setImportPreview({ valid: false, error: data?.error ?? "导入失败" });
-      setBackupStatus(data?.error ? `导入失败：${data.error}` : "导入失败");
-      return;
-    }
-    await loadNotes("");
-    setPendingImportFile(null);
-    setImportPreview(null);
-    setBackupStatus("ZIP 已导入");
-  }
-
-  function cancelImportZip() {
-    setPendingImportFile(null);
-    setImportPreview(null);
-    setBackupStatus("");
-  }
-
   async function uploadAttachment(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || !selectedId) return;
@@ -345,71 +274,6 @@ export function useNoteWorkspace() {
     await fetch("/api/attachments", { method: "POST", body: form });
     await loadNotes();
     event.target.value = "";
-  }
-
-  async function openBackupDialog() {
-    setBackupDialogOpen(true);
-    await Promise.all([loadBackups(), loadHealth()]);
-  }
-
-  async function openSettingsDialog() {
-    setSettingsDialogOpen(true);
-    await loadHealth();
-  }
-
-  async function loadHealth() {
-    const response = await fetch("/api/health");
-    if (!response.ok) return;
-    setHealth((await response.json()) as HealthStatus);
-  }
-
-  async function loadBackups() {
-    const response = await fetch("/api/backups");
-    if (!response.ok) return;
-    const data = (await response.json()) as { backups: Backup[]; summary: BackupSummary };
-    setBackups(data.backups);
-    setBackupSummary(data.summary);
-  }
-
-  async function createBackupArchive() {
-    setBackupStatus("正在创建备份...");
-    const response = await fetch("/api/backups", { method: "POST" });
-    if (!response.ok) {
-      setBackupStatus("备份失败");
-      return;
-    }
-    const data = (await response.json()) as { backup: Backup };
-    setBackups((current) => {
-      const nextBackups = [data.backup, ...current.filter((backup) => backup.filename !== data.backup.filename)];
-      setBackupSummary(summarizeBackupList(nextBackups, backupSummary?.retention ?? 10));
-      return nextBackups;
-    });
-    setBackupStatus("备份已创建");
-  }
-
-  async function deleteBackupArchive() {
-    if (!backupDeleteTarget) return;
-    const backup = backupDeleteTarget;
-    const response = await fetch(`/api/backups/${encodeURIComponent(backup.filename)}`, { method: "DELETE" });
-    if (!response.ok) {
-      setBackupStatus("删除备份失败");
-      return;
-    }
-    setBackups((current) => {
-      const nextBackups = current.filter((item) => item.filename !== backup.filename);
-      setBackupSummary(summarizeBackupList(nextBackups, backupSummary?.retention ?? 10));
-      return nextBackups;
-    });
-    setBackupDeleteTarget(null);
-    setBackupStatus("备份已删除");
-  }
-
-  async function verifyBackupArchive(backup: Backup) {
-    setBackupStatus(`正在校验 ${backup.filename}...`);
-    const response = await fetch(`/api/backups/${encodeURIComponent(backup.filename)}/verify`, { method: "POST" });
-    const preview = (await response.json().catch(() => ({ valid: false, error: "备份校验失败" }))) as ImportPreview;
-    setBackupVerifyResults((current) => ({ ...current, [backup.filename]: preview }));
-    setBackupStatus(preview.valid ? "备份可恢复" : `备份不可恢复：${preview.error}`);
   }
 
   async function openApiKeyDialog() {
@@ -482,7 +346,7 @@ export function useNoteWorkspace() {
     setCodeLanguage,
     activeMobilePane,
     setActiveMobilePane,
-    importing,
+    importing: backupManager.importing,
     apiKeyDialogOpen,
     setApiKeyDialogOpen,
     apiKeys,
@@ -490,19 +354,19 @@ export function useNoteWorkspace() {
     setApiKeyName,
     newApiKey,
     copiedApiKeyId,
-    backupDialogOpen,
-    setBackupDialogOpen,
-    backups,
-    backupSummary,
-    backupDeleteTarget,
-    setBackupDeleteTarget,
-    importPreview,
-    pendingImportFile,
-    backupVerifyResults,
-    backupStatus,
-    settingsDialogOpen,
-    setSettingsDialogOpen,
-    health,
+    backupDialogOpen: backupManager.backupDialogOpen,
+    setBackupDialogOpen: backupManager.setBackupDialogOpen,
+    backups: backupManager.backups,
+    backupSummary: backupManager.backupSummary,
+    backupDeleteTarget: backupManager.backupDeleteTarget,
+    setBackupDeleteTarget: backupManager.setBackupDeleteTarget,
+    importPreview: backupManager.importPreview,
+    pendingImportFile: backupManager.pendingImportFile,
+    backupVerifyResults: backupManager.backupVerifyResults,
+    backupStatus: backupManager.backupStatus,
+    settingsDialogOpen: backupManager.settingsDialogOpen,
+    setSettingsDialogOpen: backupManager.setSettingsDialogOpen,
+    health: backupManager.health,
     textareaRef,
     selectedNote,
     checkedNotes,
@@ -523,16 +387,16 @@ export function useNoteWorkspace() {
     insertSnippet,
     insertCodeBlock,
     exportZip,
-    importZip,
-    restoreBackupZip,
-    confirmImportZip,
-    cancelImportZip,
+    importZip: backupManager.importZip,
+    restoreBackupZip: backupManager.restoreBackupZip,
+    confirmImportZip: backupManager.confirmImportZip,
+    cancelImportZip: backupManager.cancelImportZip,
     uploadAttachment,
-    openBackupDialog,
-    openSettingsDialog,
-    createBackupArchive,
-    deleteBackupArchive,
-    verifyBackupArchive,
+    openBackupDialog: backupManager.openBackupDialog,
+    openSettingsDialog: backupManager.openSettingsDialog,
+    createBackupArchive: backupManager.createBackupArchive,
+    deleteBackupArchive: backupManager.deleteBackupArchive,
+    verifyBackupArchive: backupManager.verifyBackupArchive,
     openApiKeyDialog,
     createApiKey,
     deleteApiKey,
