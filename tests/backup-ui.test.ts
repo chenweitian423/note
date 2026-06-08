@@ -2,23 +2,27 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+function readComponentSources(files: string[]) {
+  return files.map((file) => fs.readFileSync(path.join(process.cwd(), file), "utf8")).join("\n");
+}
+
 describe("backup manager ui", () => {
   it("exposes a backup zip restore upload entry", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/note-preview-pane.tsx",
+      "src/components/use-note-workspace.ts"
+    ]);
 
     expect(source).toContain('aria-label="导入备份 ZIP"');
     expect(source).toContain('accept=".zip,application/zip"');
   });
 
   it("exposes backup deletion and keeps the topbar focused", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/workspace-toolbar.tsx"
+    ]);
     const topbar = source.match(/<div className="topbar">[\s\S]*?<\/div>/)?.[0] ?? "";
 
     expect(source).toContain("删除这份备份");
@@ -41,13 +45,13 @@ describe("backup manager ui", () => {
   });
 
   it("uses an in-app delete confirmation instead of the browser confirm dialog", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/note-preview-pane.tsx",
+      "src/components/note-sidebar.tsx",
+      "src/components/workspace-toolbar.tsx",
+      "src/components/use-note-workspace.ts"
+    ]);
 
     expect(source).not.toContain("window.confirm");
     expect(source).toContain("backupDeleteTarget");
@@ -57,13 +61,10 @@ describe("backup manager ui", () => {
   });
 
   it("shows backup statistics in the backup manager", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/use-note-workspace.ts"
+    ]);
 
     expect(source).toContain("backupSummary");
     expect(source).toContain("备份总数");
@@ -74,10 +75,10 @@ describe("backup manager ui", () => {
   });
 
   it("shows auto backup status in the backup manager", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/use-note-workspace.ts"
+    ]);
 
     expect(source).toContain("autoBackup");
     expect(source).toContain("自动备份");
@@ -87,10 +88,10 @@ describe("backup manager ui", () => {
   });
 
   it("previews zip imports before confirming restore", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/use-note-workspace.ts"
+    ]);
 
     expect(source).toContain("/api/import/preview");
     expect(source).toContain("importPreview");
@@ -100,10 +101,10 @@ describe("backup manager ui", () => {
   });
 
   it("exposes backup verification in the backup manager", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/use-note-workspace.ts"
+    ]);
 
     expect(source).toContain("verifyBackupArchive");
     expect(source).toContain("校验这份备份");
@@ -112,13 +113,13 @@ describe("backup manager ui", () => {
   });
 
   it("keeps common Chinese UI labels readable", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/note-sidebar.tsx",
+      "src/components/note-preview-pane.tsx",
+      "src/components/workspace-toolbar.tsx",
+      "src/components/use-note-workspace.ts"
+    ]);
 
     expect(source).toContain("新建笔记");
     expect(source).toContain("搜索标题或正文");
