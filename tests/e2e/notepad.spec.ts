@@ -115,7 +115,9 @@ test("archive box restores notes and permanently deletes archived notes", async 
   await page.getByRole("button", { name: new RegExp(noteTitle) }).click();
   await page.getByRole("button", { name: "归档", exact: true }).click();
   await page.locator(".topbar").getByRole("button", { name: "归档箱" }).click();
-  await page.getByRole("button", { name: new RegExp(noteTitle) }).click();
+  const archivedNoteButton = page.getByRole("button", { name: new RegExp(noteTitle) });
+  await expect(archivedNoteButton).toBeVisible();
+  await archivedNoteButton.click();
   await expect(page.getByRole("textbox", { name: "标题", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "永久删除笔记" }).click();
   const confirmDialog = page.getByRole("dialog", { name: "确认删除笔记" });

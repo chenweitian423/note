@@ -6,6 +6,9 @@ describe("archive and note deletion ui", () => {
   it("exposes an archive box with restore and permanent delete actions", () => {
     const source = [
       fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-editor-pane.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
       fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
     ].join("\n");
 
@@ -21,6 +24,9 @@ describe("archive and note deletion ui", () => {
   it("exposes multi-select bulk archive, restore, and permanent delete actions", () => {
     const source = [
       fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-editor-pane.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
       fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
     ].join("\n");
 

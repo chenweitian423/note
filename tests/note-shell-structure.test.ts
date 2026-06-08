@@ -6,6 +6,13 @@ describe("note shell structure", () => {
   it("keeps the page shell focused by delegating state and dialogs to extracted modules", () => {
     const noteShell = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
     const noteShellView = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8");
+    const workspaceToolbar = fs.readFileSync(
+      path.join(process.cwd(), "src/components/workspace-toolbar.tsx"),
+      "utf8"
+    );
+    const noteSidebar = fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8");
+    const noteEditorPane = fs.readFileSync(path.join(process.cwd(), "src/components/note-editor-pane.tsx"), "utf8");
+    const notePreviewPane = fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8");
 
     expect(noteShell).toContain('from "./use-note-workspace"');
     expect(noteShell).toContain('from "./note-shell-view"');
@@ -13,5 +20,13 @@ describe("note shell structure", () => {
     expect(noteShell).not.toContain("async function loadNotes");
     expect(noteShell).not.toContain("async function openBackupDialog");
     expect(noteShellView).toContain('from "./note-shell-dialogs"');
+    expect(noteShellView).toContain('from "./note-sidebar"');
+    expect(noteShellView).toContain('from "./note-editor-pane"');
+    expect(noteShellView).toContain('from "./note-preview-pane"');
+    expect(noteSidebar).toContain('from "./workspace-toolbar"');
+    expect(workspaceToolbar).toContain("export function WorkspaceToolbar");
+    expect(noteSidebar).toContain("export function NoteSidebar");
+    expect(noteEditorPane).toContain("export function NoteEditorPane");
+    expect(notePreviewPane).toContain("export function NotePreviewPane");
   });
 });

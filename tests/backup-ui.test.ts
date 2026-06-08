@@ -6,6 +6,7 @@ describe("backup manager ui", () => {
   it("exposes a backup zip restore upload entry", () => {
     const source = [
       fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8"),
       fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
     ].join("\n");
 
@@ -14,7 +15,10 @@ describe("backup manager ui", () => {
   });
 
   it("exposes backup deletion and keeps the topbar focused", () => {
-    const source = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8");
+    const source = [
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8")
+    ].join("\n");
     const topbar = source.match(/<div className="topbar">[\s\S]*?<\/div>/)?.[0] ?? "";
 
     expect(source).toContain("删除这份备份");
@@ -39,6 +43,9 @@ describe("backup manager ui", () => {
   it("uses an in-app delete confirmation instead of the browser confirm dialog", () => {
     const source = [
       fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
       fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
     ].join("\n");
 
@@ -52,6 +59,9 @@ describe("backup manager ui", () => {
   it("shows backup statistics in the backup manager", () => {
     const source = [
       fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
       fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
     ].join("\n");
 
@@ -104,6 +114,9 @@ describe("backup manager ui", () => {
   it("keeps common Chinese UI labels readable", () => {
     const source = [
       fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/note-preview-pane.tsx"), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
       fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
     ].join("\n");
 

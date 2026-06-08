@@ -1,113 +1,55 @@
 "use client";
 
 import {
-  Archive,
-  ArchiveRestore,
-  Bold,
   Check,
-  Code2,
   Copy,
   Database,
-  Download,
-  FilePlus2,
-  Heading1,
-  Image,
   KeyRound,
-  Link,
-  List,
-  LogOut,
-  Settings,
   Trash2,
   Upload
 } from "lucide-react";
-import { MarkdownView } from "@/lib/markdown";
+import { NoteEditorPane } from "./note-editor-pane";
+import { NotePreviewPane } from "./note-preview-pane";
+import { NoteSidebar } from "./note-sidebar";
 import { NoteShellDialog } from "./note-shell-dialogs";
 import type { NoteWorkspace } from "./use-note-workspace";
 
-const CODE_LANGUAGES = [
-  { value: "text", label: "Plain Text" },
-  { value: "bash", label: "Bash" },
-  { value: "dockerfile", label: "Dockerfile" },
-  { value: "yaml", label: "YAML" },
-  { value: "json", label: "JSON" },
-  { value: "javascript", label: "JavaScript" },
-  { value: "typescript", label: "TypeScript" },
-  { value: "python", label: "Python" },
-  { value: "sql", label: "SQL" },
-  { value: "nginx", label: "Nginx" }
-];
-
 export function NoteShellView({ workspace }: { workspace: NoteWorkspace }) {
   const {
-    activeMobilePane,
     apiKeyDialogOpen,
     apiKeyName,
     apiKeys,
-    archiveSelectedNote,
-    archiveSelectedNotes,
     backupDeleteTarget,
     backupDialogOpen,
     backups,
     backupStatus,
     backupSummary,
     backupVerifyResults,
-    checkedNotes,
-    codeLanguage,
     confirmImportZip,
-    content,
     copiedApiKeyId,
     copyNewApiKey,
     createApiKey,
     createBackupArchive,
-    createNewNote,
     deleteApiKey,
     deleteBackupArchive,
     deleteSelectedNotePermanently,
-    dirtySinceSelect,
-    exportZip,
     health,
     importPreview,
     importing,
     importZip,
-    insertCodeBlock,
-    insertSnippet,
-    loadNotes,
-    logout,
     newApiKey,
     noteDeleteTarget,
-    notes,
     openApiKeyDialog,
     openBackupDialog,
-    openSettingsDialog,
     pendingImportFile,
-    query,
     restoreBackupZip,
-    restoreSelectedNote,
-    restoreSelectedNotes,
-    saveState,
-    selectAllVisibleNotes,
-    selectedId,
-    selectedNote,
-    selectedNoteIds,
-    selectNote,
-    setActiveMobilePane,
     setApiKeyDialogOpen,
     setApiKeyName,
     setBackupDeleteTarget,
     setBackupDialogOpen,
-    setCodeLanguage,
-    setContent,
     setNoteDeleteTarget,
-    setQuery,
     setSettingsDialogOpen,
     settingsDialogOpen,
-    setTitle,
-    showArchived,
-    textareaRef,
-    title,
-    toggleArchiveBox,
-    toggleNoteSelection,
-    uploadAttachment,
     verifyBackupArchive
   } = workspace;
 
@@ -157,208 +99,9 @@ export function NoteShellView({ workspace }: { workspace: NoteWorkspace }) {
 
   return (
     <main className="workspace">
-      <aside className={`sidebar ${activeMobilePane === "list" ? "active-pane" : ""}`}>
-        <div className="topbar">
-          <button title="新建笔记" aria-label="新建笔记" onClick={createNewNote}>
-            <FilePlus2 size={18} />
-          </button>
-          <button title="导出" aria-label="导出" onClick={exportZip}>
-            <Download size={18} />
-          </button>
-          <button
-            title={showArchived ? "返回当前笔记" : "归档箱"}
-            aria-label={showArchived ? "返回当前笔记" : "归档箱"}
-            className={showArchived ? "active-tool" : undefined}
-            onClick={toggleArchiveBox}
-          >
-            <Archive size={18} />
-          </button>
-          <button title="设置" aria-label="设置和状态" onClick={openSettingsDialog}>
-            <Settings size={18} />
-          </button>
-          <button title="退出登录" aria-label="退出登录" onClick={logout}>
-            <LogOut size={18} />
-          </button>
-        </div>
-        <input
-          className="search"
-          placeholder="搜索标题或正文"
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            void loadNotes(event.target.value, showArchived);
-          }}
-        />
-        {showArchived ? <p className="status-line">归档箱：这些笔记没有删除，可恢复或永久删除。</p> : null}
-        {importing ? <p className="status-line">正在导入...</p> : null}
-        {notes.length > 0 ? (
-          <div className="bulk-note-actions">
-            <label className="note-select-all">
-              <input
-                type="checkbox"
-                aria-label="选择全部可见笔记"
-                checked={selectedNoteIds.length > 0 && selectedNoteIds.length === notes.length}
-                onChange={(event) => selectAllVisibleNotes(event.target.checked)}
-              />
-              <span>已选 {selectedNoteIds.length}</span>
-            </label>
-            {showArchived ? (
-              <>
-                <button className="text-action" disabled={selectedNoteIds.length === 0} onClick={restoreSelectedNotes}>
-                  批量恢复
-                </button>
-                <button
-                  className="text-action danger-action"
-                  disabled={selectedNoteIds.length === 0}
-                  onClick={() => setNoteDeleteTarget(checkedNotes)}
-                >
-                  批量永久删除
-                </button>
-              </>
-            ) : (
-              <button className="text-action" disabled={selectedNoteIds.length === 0} onClick={archiveSelectedNotes}>
-                批量归档
-              </button>
-            )}
-          </div>
-        ) : null}
-        <div className="note-list">
-          {notes.map((note) => (
-            <div key={note.id} className={note.id === selectedId ? "note-row selected" : "note-row"}>
-              <input
-                type="checkbox"
-                className="note-checkbox"
-                aria-label={`选择 ${note.title}`}
-                checked={selectedNoteIds.includes(note.id)}
-                onChange={(event) => toggleNoteSelection(note.id, event.target.checked)}
-              />
-              <button
-                className="note-item"
-                onClick={() => {
-                  selectNote(note);
-                  setActiveMobilePane("editor");
-                }}
-              >
-                <strong>
-                  <span className="note-number">{note.noteNumber}</span>
-                  {note.title}
-                </strong>
-                <span>{new Date(note.updatedAt).toLocaleString("zh-CN")}</span>
-              </button>
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      <section className={`editor-pane ${activeMobilePane === "editor" ? "active-pane" : ""}`}>
-        <div className="mobile-tabs">
-          <button onClick={() => setActiveMobilePane("list")}>列表</button>
-          <button onClick={() => setActiveMobilePane("editor")}>编辑</button>
-          <button onClick={() => setActiveMobilePane("preview")}>预览</button>
-        </div>
-        {selectedNote ? (
-          <>
-            <div className="editor-header">
-              <input
-                aria-label="标题"
-                value={title}
-                onChange={(event) => {
-                  dirtySinceSelect.current = true;
-                  setTitle(event.target.value);
-                }}
-              />
-              {showArchived ? (
-                <>
-                  <button title="恢复" aria-label="恢复归档" onClick={restoreSelectedNote}>
-                    <ArchiveRestore size={18} />
-                  </button>
-                  <button title="永久删除" aria-label="永久删除笔记" onClick={() => setNoteDeleteTarget([selectedNote])}>
-                    <Trash2 size={18} />
-                  </button>
-                </>
-              ) : (
-                <button title="归档" aria-label="归档" onClick={archiveSelectedNote}>
-                  <Archive size={18} />
-                </button>
-              )}
-            </div>
-            <div className="formatbar">
-              <button title="标题" aria-label="插入标题" onClick={() => insertSnippet("# ", "")}>
-                <Heading1 size={17} />
-              </button>
-              <button title="粗体" aria-label="插入粗体" onClick={() => insertSnippet("**", "**")}>
-                <Bold size={17} />
-              </button>
-              <button title="列表" aria-label="插入列表" onClick={() => insertSnippet("- ", "")}>
-                <List size={17} />
-              </button>
-              <button title="链接" aria-label="插入链接" onClick={() => insertSnippet("[", "](https://)")}>
-                <Link size={17} />
-              </button>
-              <button title="图片" aria-label="插入图片" onClick={() => insertSnippet("![", "](图片地址)")}>
-                <Image size={17} />
-              </button>
-              <select
-                className="code-language-select"
-                aria-label="代码块类型"
-                value={codeLanguage}
-                onChange={(event) => setCodeLanguage(event.target.value)}
-              >
-                {CODE_LANGUAGES.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-              <button title="代码块" aria-label="插入代码块" onClick={insertCodeBlock}>
-                <Code2 size={17} />
-              </button>
-              <span>{saveState === "saving" ? "保存中" : saveState === "error" ? "保存失败" : "已保存"}</span>
-            </div>
-            <textarea
-              ref={textareaRef}
-              aria-label="正文"
-              value={content}
-              onChange={(event) => {
-                dirtySinceSelect.current = true;
-                setContent(event.target.value);
-              }}
-            />
-          </>
-        ) : (
-          <div className="empty-state">
-            <button onClick={createNewNote}>新建笔记</button>
-          </div>
-        )}
-      </section>
-
-      <aside className={`preview-pane ${activeMobilePane === "preview" ? "active-pane" : ""}`}>
-        <div className="preview-scroll">
-          <MarkdownView content={content} />
-        </div>
-        <div className="attachments">
-          <div className="attachments-title">
-            <span>附件</span>
-            <label className="icon-button" title="上传附件" aria-label="上传附件">
-              <Upload size={17} />
-              <input type="file" onChange={uploadAttachment} disabled={!selectedId} />
-            </label>
-          </div>
-          {(selectedNote?.attachments ?? []).map((attachment) => (
-            <div key={attachment.id} className="attachment-row">
-              <span>{attachment.filename}</span>
-              <a
-                className="attachment-download"
-                href={`/api/attachments/${attachment.id}/download`}
-                title="下载附件"
-                aria-label={`下载 ${attachment.filename}`}
-              >
-                <Download size={15} />
-              </a>
-            </div>
-          ))}
-        </div>
-      </aside>
+      <NoteSidebar workspace={workspace} />
+      <NoteEditorPane workspace={workspace} />
+      <NotePreviewPane workspace={workspace} />
       {backupDialogOpen ? (
         <div className="modal-backdrop" role="presentation">
           <section className="api-key-dialog" role="dialog" aria-modal="true" aria-label="备份管理">
