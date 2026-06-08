@@ -1,14 +1,8 @@
 "use client";
 
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import {
-  normalizeNote,
-  withoutSecret,
-  type ApiKey,
-  type CreatedApiKey,
-  type Note,
-  type SaveState
-} from "./note-workspace-model";
+import { normalizeNote, type Note, type SaveState } from "./note-workspace-model";
+import { useApiKeyManager } from "./use-api-key-manager";
 import { useBackupManager } from "./use-backup-manager";
 
 export function useNoteWorkspace() {
@@ -23,11 +17,6 @@ export function useNoteWorkspace() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [codeLanguage, setCodeLanguage] = useState("bash");
   const [activeMobilePane, setActiveMobilePane] = useState<"list" | "editor" | "preview">("editor");
-  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [apiKeyName, setApiKeyName] = useState("curl");
-  const [newApiKey, setNewApiKey] = useState<CreatedApiKey | null>(null);
-  const [copiedApiKeyId, setCopiedApiKeyId] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectedNote = useMemo(() => notes.find((note) => note.id === selectedId) ?? null, [notes, selectedId]);
   const checkedNotes = useMemo(
@@ -38,6 +27,7 @@ export function useNoteWorkspace() {
   const notesRequestId = useRef(0);
   const dirtySinceSelect = useRef(false);
   const backupManager = useBackupManager({ loadNotes });
+  const apiKeyManager = useApiKeyManager();
 
   useEffect(() => {
     void loadNotes();
@@ -276,57 +266,6 @@ export function useNoteWorkspace() {
     event.target.value = "";
   }
 
-  async function openApiKeyDialog() {
-    setApiKeyDialogOpen(true);
-    await loadApiKeys();
-  }
-
-  async function loadApiKeys() {
-    const response = await fetch("/api/api-keys");
-    if (!response.ok) return;
-    const data = (await response.json()) as { apiKeys: ApiKey[] };
-    setApiKeys(data.apiKeys);
-  }
-
-  async function createApiKey() {
-    const response = await fetch("/api/api-keys", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: apiKeyName })
-    });
-    if (!response.ok) return;
-    const data = (await response.json()) as { apiKey: CreatedApiKey };
-    setNewApiKey(data.apiKey);
-    setApiKeys((current) => [withoutSecret(data.apiKey), ...current]);
-  }
-
-  async function deleteApiKey(id: string) {
-    await fetch(`/api/api-keys/${id}`, { method: "DELETE" });
-    setApiKeys((current) => current.filter((apiKey) => apiKey.id !== id));
-  }
-
-  async function copyText(text: string) {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      document.execCommand("copy");
-      textarea.remove();
-    }
-  }
-
-  async function copyNewApiKey(apiKey: CreatedApiKey) {
-    await copyText(apiKey.key);
-    setCopiedApiKeyId(apiKey.id);
-    window.setTimeout(() => setCopiedApiKeyId(""), 1200);
-  }
-
   return {
     notes,
     selectedId,
@@ -347,13 +286,13 @@ export function useNoteWorkspace() {
     activeMobilePane,
     setActiveMobilePane,
     importing: backupManager.importing,
-    apiKeyDialogOpen,
-    setApiKeyDialogOpen,
-    apiKeys,
-    apiKeyName,
-    setApiKeyName,
-    newApiKey,
-    copiedApiKeyId,
+    apiKeyDialogOpen: apiKeyManager.apiKeyDialogOpen,
+    setApiKeyDialogOpen: apiKeyManager.setApiKeyDialogOpen,
+    apiKeys: apiKeyManager.apiKeys,
+    apiKeyName: apiKeyManager.apiKeyName,
+    setApiKeyName: apiKeyManager.setApiKeyName,
+    newApiKey: apiKeyManager.newApiKey,
+    copiedApiKeyId: apiKeyManager.copiedApiKeyId,
     backupDialogOpen: backupManager.backupDialogOpen,
     setBackupDialogOpen: backupManager.setBackupDialogOpen,
     backups: backupManager.backups,
@@ -397,10 +336,10 @@ export function useNoteWorkspace() {
     createBackupArchive: backupManager.createBackupArchive,
     deleteBackupArchive: backupManager.deleteBackupArchive,
     verifyBackupArchive: backupManager.verifyBackupArchive,
-    openApiKeyDialog,
-    createApiKey,
-    deleteApiKey,
-    copyNewApiKey
+    openApiKeyDialog: apiKeyManager.openApiKeyDialog,
+    createApiKey: apiKeyManager.createApiKey,
+    deleteApiKey: apiKeyManager.deleteApiKey,
+    copyNewApiKey: apiKeyManager.copyNewApiKey
   };
 }
 

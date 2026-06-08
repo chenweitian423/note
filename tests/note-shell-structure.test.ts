@@ -12,6 +12,10 @@ describe("note shell structure", () => {
       path.join(process.cwd(), "src/components/use-backup-manager.ts"),
       "utf8"
     );
+    const apiKeyManagerHook = fs.readFileSync(
+      path.join(process.cwd(), "src/components/use-api-key-manager.ts"),
+      "utf8"
+    );
     const workspaceToolbar = fs.readFileSync(
       path.join(process.cwd(), "src/components/workspace-toolbar.tsx"),
       "utf8"
@@ -44,10 +48,14 @@ describe("note shell structure", () => {
     expect(noteShellView).not.toContain("apiKeyDialogOpen");
     expect(workspaceHook).toContain('from "./note-workspace-model"');
     expect(workspaceHook).toContain('from "./use-backup-manager"');
+    expect(workspaceHook).toContain('from "./use-api-key-manager"');
     expect(workspaceHook).not.toMatch(/\btype ImportPreview\s*=/);
     expect(workspaceHook).not.toMatch(/\basync function openBackupDialog\b/);
     expect(workspaceHook).not.toMatch(/\basync function loadBackups\b/);
     expect(workspaceHook).not.toMatch(/\basync function createBackupArchive\b/);
+    expect(workspaceHook).not.toMatch(/\basync function openApiKeyDialog\b/);
+    expect(workspaceHook).not.toMatch(/\basync function loadApiKeys\b/);
+    expect(workspaceHook).not.toMatch(/\basync function createApiKey\b/);
     expect(workspaceModel).toContain("export type ImportPreview");
     expect(workspaceModel).toContain("export function normalizeNote");
     expect(workspaceModel).toContain("export function withoutSecret");
@@ -55,5 +63,8 @@ describe("note shell structure", () => {
     expect(backupManagerHook).toContain("export function useBackupManager");
     expect(backupManagerHook).toContain("async function openBackupDialog");
     expect(backupManagerHook).toContain("async function createBackupArchive");
+    expect(apiKeyManagerHook).toContain("export function useApiKeyManager");
+    expect(apiKeyManagerHook).toContain("async function openApiKeyDialog");
+    expect(apiKeyManagerHook).toContain("async function createApiKey");
   });
 });
