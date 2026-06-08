@@ -19,7 +19,7 @@ export async function hasApiKey(request: Request): Promise<boolean> {
   const db = await getDb();
   const ok = verifyApiKey(db, token);
   if (ok) {
-    persistDb(db);
+    await persistDb(db);
   }
   return ok;
 }

@@ -6,6 +6,7 @@ import { ensureDataDirs, getDbPath } from "./paths";
 
 let sqlModulePromise: Promise<SqlJsStatic> | null = null;
 let dbPromise: Promise<Database> | null = null;
+let persistQueue: Promise<void> = Promise.resolve();
 
 async function getSqlModule(): Promise<SqlJsStatic> {
   sqlModulePromise ??= initSqlJs({
@@ -120,29 +121,55 @@ export async function getDb(): Promise<Database> {
       ? new SQL.Database(fs.readFileSync(dbPath))
       : new SQL.Database();
     initializeSchema(db);
-    persistDb(db);
+    await persistDb(db);
     return db;
   })();
   return dbPromise;
 }
 
-export function persistDb(db: Database): void {
-  ensureDataDirs();
-  writeDatabaseFile(db, getDbPath());
+export function persistDb(db: Database): Promise<void> {
+  const snapshot = Buffer.from(db.export());
+  const dbPath = getDbPath();
+
+  persistQueue = persistQueue
+    .catch(() => undefined)
+    .then(async () => {
+      ensureDataDirs();
+      await writeDatabaseBuffer(snapshot, dbPath);
+    });
+  return persistQueue;
 }
 
 export function writeDatabaseFile(db: Database, dbPath: string): void {
+  writeDatabaseBytes(Buffer.from(db.export()), dbPath);
+}
+
+function writeDatabaseBytes(buffer: Buffer, dbPath: string): void {
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
   const tempPath = `${dbPath}.${process.pid}.${Date.now()}.tmp`;
   const fd = fs.openSync(tempPath, "w");
   try {
-    fs.writeFileSync(fd, Buffer.from(db.export()));
+    fs.writeFileSync(fd, buffer);
     fs.fsyncSync(fd);
   } finally {
     fs.closeSync(fd);
   }
   fs.renameSync(tempPath, dbPath);
   fsyncDirectory(path.dirname(dbPath));
+}
+
+async function writeDatabaseBuffer(buffer: Buffer, dbPath: string): Promise<void> {
+  await fs.promises.mkdir(path.dirname(dbPath), { recursive: true });
+  const tempPath = `${dbPath}.${process.pid}.${Date.now()}.tmp`;
+  const fileHandle = await fs.promises.open(tempPath, "w");
+  try {
+    await fileHandle.writeFile(buffer);
+    await fileHandle.sync();
+  } finally {
+    await fileHandle.close();
+  }
+  await fs.promises.rename(tempPath, dbPath);
+  await fsyncDirectoryAsync(path.dirname(dbPath));
 }
 
 function fsyncDirectory(dir: string): void {
@@ -152,6 +179,19 @@ function fsyncDirectory(dir: string): void {
       fs.fsyncSync(fd);
     } finally {
       fs.closeSync(fd);
+    }
+  } catch {
+    // Some filesystems do not allow fsync on directories; the file rename is still atomic.
+  }
+}
+
+async function fsyncDirectoryAsync(dir: string): Promise<void> {
+  try {
+    const handle = await fs.promises.open(dir, "r");
+    try {
+      await handle.sync();
+    } finally {
+      await handle.close();
     }
   } catch {
     // Some filesystems do not allow fsync on directories; the file rename is still atomic.

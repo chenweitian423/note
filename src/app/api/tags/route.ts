@@ -26,6 +26,6 @@ export async function POST(request: Request) {
 
   const db = await getDb();
   const tag = createTag(db, parsed.data);
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ tag }, { status: 201 });
 }

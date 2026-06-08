@@ -52,7 +52,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!note) {
     return NextResponse.json({ error: "笔记不存在" }, { status: 404 });
   }
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ note });
 }
 
@@ -73,6 +73,6 @@ export async function DELETE(request: Request, { params }: Params) {
   } else {
     archiveNote(db, id);
   }
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ ok: true });
 }

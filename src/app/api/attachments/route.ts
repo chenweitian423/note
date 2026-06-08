@@ -40,6 +40,6 @@ export async function POST(request: Request) {
     mimeType: file.type || "application/octet-stream",
     size: file.size
   });
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ attachment }, { status: 201 });
 }

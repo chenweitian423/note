@@ -22,6 +22,7 @@ describe("README deployment guide", () => {
     expect(readme).toContain("ALLOW_DIRTY_DEPLOY=1");
     expect(readme).toContain("当前稳定版");
     expect(readme).toContain("npm run e2e");
+    expect(readme).toContain("chcp 65001");
   });
 
   it("keeps the displayed current version in sync with package.json", () => {

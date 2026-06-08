@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import type { Database } from "sql.js";
 import { z } from "zod";
 import { sha256Hex } from "./checksum";
-import { sanitizeFilename } from "./filenames";
+import { safeZipPath, sanitizeFilename } from "./filenames";
 import { createAttachment, createNote, listNotes, uniqueSlug } from "./notes";
 import { readZipEntries } from "./zip";
 
@@ -65,7 +65,7 @@ export async function importArchive(
   uploadsDir: string,
   zipBuffer: Buffer
 ): Promise<{ imported: number }> {
-  const { byName, manifest, parsed } = await parseImportArchive(zipBuffer);
+  const { byName, parsed } = await parseImportArchive(zipBuffer);
   fs.mkdirSync(uploadsDir, { recursive: true });
 
   const existingIds = new Set(listNotes(db, { includeArchived: true }).map((note) => note.id));
@@ -83,7 +83,7 @@ export async function importArchive(
     });
 
     for (const attachment of importedNote.attachments) {
-      const entry = byName.get(`attachments/${importedNote.id}/${attachment.filename}`);
+      const entry = byName.get(safeZipPath("attachments", importedNote.id, attachment.filename));
       if (!entry) continue;
       const filename = sanitizeFilename(attachment.filename);
       const storedName = `${note.id}-${randomUUID()}-${path.basename(filename)}`;
@@ -138,5 +138,41 @@ async function parseImportArchive(zipBuffer: Buffer) {
     checksumValid = true;
   }
   const parsed = notesSchema.parse(JSON.parse(notesRaw.toString("utf8")));
+  validateManifestCounts(manifest, parsed);
+  validateAttachmentEntries(byName, parsed);
   return { byName, manifest, parsed, checksumValid };
+}
+
+function validateManifestCounts(manifest: z.infer<typeof manifestSchema>, parsed: z.infer<typeof notesSchema>): void {
+  const noteCount = parsed.notes.length;
+  const attachmentCount = parsed.notes.reduce((count, note) => count + note.attachments.length, 0);
+
+  if (manifest.noteCount !== noteCount) {
+    throw new Error(`manifest noteCount mismatch: expected ${manifest.noteCount}, got ${noteCount}`);
+  }
+  if (manifest.attachmentCount !== attachmentCount) {
+    throw new Error(`manifest attachmentCount mismatch: expected ${manifest.attachmentCount}, got ${attachmentCount}`);
+  }
+}
+
+function validateAttachmentEntries(
+  byName: Map<string, Buffer>,
+  parsed: z.infer<typeof notesSchema>
+): void {
+  const expectedEntries = new Set(
+    parsed.notes.flatMap((note) => note.attachments.map((attachment) => safeZipPath("attachments", note.id, attachment.filename)))
+  );
+  const actualEntries = Array.from(byName.keys()).filter((name) => name.startsWith("attachments/"));
+
+  for (const entryName of actualEntries) {
+    if (!expectedEntries.has(entryName)) {
+      throw new Error(`unexpected attachment entry: ${entryName}`);
+    }
+  }
+
+  for (const entryName of expectedEntries) {
+    if (!byName.has(entryName)) {
+      throw new Error(`missing attachment entry: ${entryName}`);
+    }
+  }
 }

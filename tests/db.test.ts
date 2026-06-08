@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { all } from "../src/lib/sql";
 import { createTestDb } from "../src/test/create-test-db";
-import { initializeSchema, writeDatabaseFile } from "../src/lib/db";
+import { initializeSchema, persistDb, writeDatabaseFile } from "../src/lib/db";
 
 function tempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "online-notepad-db-"));
@@ -69,6 +69,26 @@ describe("database schema", () => {
     const restored = new SQL.Database(fs.readFileSync(dbPath));
     expect(all<{ value: string }>(restored, "select value from settings where key = 'health'")).toEqual([
       { value: "ok" }
+    ]);
+  });
+
+  it("serializes persistDb writes so the last state wins", async () => {
+    const dir = tempDir();
+    process.env.DATA_DIR = dir;
+    const db = await createTestDb();
+    db.run("insert into settings (key, value) values ('health', 'first')");
+
+    const firstPersist = persistDb(db);
+    db.run("update settings set value = 'second' where key = 'health'");
+    const secondPersist = persistDb(db);
+    await Promise.all([firstPersist, secondPersist]);
+
+    const SQL = await initSqlJs({
+      locateFile: (file) => `node_modules/sql.js/dist/${file}`
+    });
+    const restored = new SQL.Database(fs.readFileSync(path.join(dir, "app.db")));
+    expect(all<{ value: string }>(restored, "select value from settings where key = 'health'")).toEqual([
+      { value: "second" }
     ]);
   });
 });

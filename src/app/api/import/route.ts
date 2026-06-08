@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       retention: readBackupRetention()
     });
     const result = await importArchive(db, uploadsDir, zipBuffer);
-    persistDb(db);
+    await persistDb(db);
     return NextResponse.json({ ...result, backup });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "导入失败" }, { status: 400 });

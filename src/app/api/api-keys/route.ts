@@ -14,7 +14,7 @@ export async function GET() {
 
   const db = await getDb();
   const apiKeys = listApiKeys(db);
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ apiKeys });
 }
 
@@ -29,6 +29,6 @@ export async function POST(request: Request) {
 
   const db = await getDb();
   const apiKey = createApiKey(db, { name: parsed.data.name });
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ apiKey }, { status: 201 });
 }

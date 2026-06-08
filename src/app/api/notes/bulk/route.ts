@@ -35,6 +35,6 @@ export async function POST(request: Request) {
     deleteNotes(db, notes.map((note) => note.id));
   }
 
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ ok: true, count: notes.length });
 }

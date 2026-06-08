@@ -37,6 +37,6 @@ export async function POST(request: Request) {
 
   const db = await getDb();
   const note = createNote(db, parsed.data);
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ note }, { status: 201 });
 }

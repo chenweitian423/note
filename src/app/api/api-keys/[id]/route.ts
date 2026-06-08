@@ -14,6 +14,6 @@ export async function DELETE(_request: Request, { params }: Params) {
   const db = await getDb();
   const { id } = await params;
   deleteApiKey(db, id);
-  persistDb(db);
+  await persistDb(db);
   return NextResponse.json({ ok: true });
 }

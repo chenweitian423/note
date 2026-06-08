@@ -140,4 +140,26 @@ describe("zip export and import", () => {
     expect(preview.valid).toBe(false);
     expect(preview.error).toEqual(expect.any(String));
   });
+
+  it("rejects imports when manifest counts do not match the archive payload", async () => {
+    const db = await createTestDb();
+    const uploadsDir = tempDir();
+    createNote(db, { title: "counted export", content: "original" });
+
+    const zip = await exportArchive(db, uploadsDir);
+    const entries = await readZipEntries(zip);
+    const byName = new Map(entries.map((entry) => [entry.name, entry.data]));
+    const manifest = JSON.parse(byName.get("manifest.json")!.toString("utf8"));
+    manifest.noteCount = 999;
+    const tampered = await zipEntries(
+      entries.map((entry) =>
+        entry.name === "manifest.json"
+          ? { ...entry, data: Buffer.from(JSON.stringify(manifest, null, 2), "utf8") }
+          : entry
+      )
+    );
+
+    const nextDb = await createTestDb();
+    await expect(importArchive(nextDb, tempDir(), tampered)).rejects.toThrow(/noteCount/i);
+  });
 });

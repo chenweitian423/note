@@ -2,6 +2,13 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.34 - 2026-06-08
+
+- 拆分 `NoteShell` 为入口壳层、`useNoteWorkspace` 状态层和 `NoteShellView` 渲染层，降低单文件复杂度并保留现有三栏笔记工作区行为。
+- 数据库持久化改为串行队列，所有会写入 sqlite 文件的 API 路由和 API Key 使用时间刷新逻辑都等待持久化完成，降低并发写入时旧快照覆盖新状态的风险。
+- 导入 ZIP 时新增 `manifest.noteCount`、`attachmentCount` 与实际 `notes.json` / 附件条目的交叉校验，拒绝缺失、额外或元数据不一致的导入包。
+- README 补充 Windows PowerShell / CMD 查看中文文档时先执行 `chcp 65001` 的说明，减少本地文档排障时的编码误判。
+
 ## 0.4.33 - 2026-06-08
 
 - `AGENTS.md` 新增“新对话交接状态”，记录当前版本、分支、远端 195、Docker 代理和更新收尾顺序，方便后续新开对话自动带上关键上下文。
