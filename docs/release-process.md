@@ -25,6 +25,13 @@
 rtk powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release-verify.ps1
 ```
 
+`scripts/release-verify.ps1` 支持按场景缩短或加深验证：
+
+- `-SkipE2E`：跳过 Playwright E2E，适合只想确认单元测试、构建和 Docker 配置的改动。
+- `-SkipDocker`：跳过 Docker 检查，适合纯代码或纯文档的快速本地验证。
+- `-OnlyDocker`：只执行本机 Docker Compose 配置检查，适合确认 `.env.local` 和 compose override。
+- `-DockerUp`：在配置检查后执行 `up -d --build`，轮询本机 `/api/health`，并在结束时执行 `down -v --remove-orphans` 清理测试容器、网络和卷。
+
 如果是在 Windows Docker Desktop 上做本机 Docker 验证，先确认 Docker Desktop 已启动；必要时先把 `.env.local.example` 复制为 `.env.local`，再使用 `docker-compose.local.yml` 做 `config` 与 `up -d --build` 验证。
 
 Playwright E2E 发布验证固定使用官方镜像 `mcr.microsoft.com/playwright:v1.60.0-noble`。如果本机没有 Node/npm/docker，可按 `AGENTS.md` 约定使用远端 Docker 环境验证。

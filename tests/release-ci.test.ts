@@ -26,6 +26,12 @@ describe("release verification workflow", () => {
     expect(workflow).toContain("npm run e2e");
     expect(releaseProcess).toContain(PLAYWRIGHT_IMAGE);
     expect(releaseProcess).toContain("rtk npm run e2e");
+    expect(releaseProcess).toContain("scripts/release-verify.ps1");
+    expect(releaseProcess).toContain("-SkipE2E");
+    expect(releaseProcess).toContain("-SkipDocker");
+    expect(releaseProcess).toContain("-OnlyDocker");
+    expect(releaseProcess).toContain("-DockerUp");
+    expect(releaseProcess).toContain("down -v --remove-orphans");
   });
 
   it("runs test, build, and e2e checks in GitHub Actions", () => {

@@ -19,6 +19,12 @@ describe("README deployment guide", () => {
     expect(readme).toContain("scripts/deploy-remote.ps1");
     expect(readme).toContain(".env.local.example");
     expect(readme).toContain("docker-compose.local.yml");
+    expect(readme).toContain("scripts/release-verify.ps1");
+    expect(readme).toContain("-SkipE2E");
+    expect(readme).toContain("-SkipDocker");
+    expect(readme).toContain("-OnlyDocker");
+    expect(readme).toContain("-DockerUp");
+    expect(readme).toContain("down -v --remove-orphans");
     expect(readme).not.toContain(privateHostAlias);
     expect(readme).not.toContain(privateDeployScript);
     expect(readme).toContain("ALLOW_DIRTY_DEPLOY=1");

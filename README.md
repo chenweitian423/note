@@ -163,6 +163,19 @@ npm run e2e
 docker compose -f docker-compose.yml -f docker-compose.local.yml --env-file .env.local config
 ```
 
+发布前建议使用统一验证脚本：
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release-verify.ps1
+```
+
+常用参数：
+
+- `-SkipE2E`：跳过 Playwright E2E，保留单元测试、构建和 Docker 配置检查。
+- `-SkipDocker`：跳过 Docker 检查，只跑代码层验证。
+- `-OnlyDocker`：只跑本机 Docker Compose 配置检查。
+- `-DockerUp`：在 Docker 配置检查后执行 `up -d --build`，轮询本机 `/api/health`，结束时自动执行 `down -v --remove-orphans` 清理测试容器、网络和卷。
+
 ## 健康检查
 
 ```bash
