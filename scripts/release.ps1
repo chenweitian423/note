@@ -27,11 +27,6 @@ if ($Version -notmatch '^\d+\.\d+\.\d+$') {
 $package = Get-Content -LiteralPath "package.json" -Raw | ConvertFrom-Json
 $packageLock = Get-Content -LiteralPath "package-lock.json" -Raw | ConvertFrom-Json
 $changelog = Get-Content -LiteralPath "CHANGELOG.md" -Raw
-$agents = if (Test-Path -LiteralPath "AGENTS.md") {
-  Get-Content -LiteralPath "AGENTS.md" -Raw
-} else {
-  ""
-}
 
 if ($package.version -ne $Version) {
   throw "package.json version is $($package.version), expected $Version."
@@ -46,22 +41,12 @@ if ($changelog -notmatch "## $([regex]::Escape($Version)) - ") {
   throw "CHANGELOG.md does not contain a section for $Version."
 }
 
-if ($agents) {
-  foreach ($required in @("当前版本", "最新提交", "最新 tag")) {
-    if ($agents -notmatch [regex]::Escape($required)) {
-      throw "AGENTS.md is missing required handoff field: $required."
-    }
-  }
-  if ($agents -notmatch [regex]::Escape($Version)) {
-    throw "AGENTS.md does not mention version $Version."
-  }
-}
-
 $status = git status --porcelain
 if ($status) {
   throw "Working tree is not clean. Commit or stash changes before releasing."
 }
 
+Run-Step "update AGENTS handoff" { powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update-handoff.ps1 }
 Run-Step "release verification" { powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release-verify.ps1 }
 
 $tag = "v$Version"

@@ -37,11 +37,19 @@ describe("release automation helpers", () => {
 
   it("checks AGENTS handoff metadata before releasing", () => {
     const script = fs.readFileSync(path.join(process.cwd(), "scripts/release.ps1"), "utf8");
+    const handoffScript = fs.readFileSync(path.join(process.cwd(), "scripts/update-handoff.ps1"), "utf8");
 
-    expect(script).toContain("AGENTS.md");
-    expect(script).toContain("最新提交");
-    expect(script).toContain("当前版本");
-    expect(script).toContain("最新 tag");
+    expect(script).toContain("update-handoff.ps1");
     expect(script).toContain("release-verify.ps1");
+    expect(handoffScript).toContain("AGENTS.md");
+    expect(handoffScript).toContain("package.json");
+    expect(handoffScript).toContain("git rev-parse --short HEAD");
+    expect(handoffScript).toContain("git describe --tags --abbrev=0");
+    expect(handoffScript).toContain("/api/health");
+    expect(handoffScript).toContain("UTF8Encoding");
+    expect(handoffScript).toContain("WriteAllText");
+    expect(handoffScript).toContain("ReadAllText");
+    expect(handoffScript).not.toContain("WriteAllLines");
+    expect(handoffScript).not.toContain("Set-Content");
   });
 });

@@ -9,10 +9,7 @@ describe("release helper script", () => {
     expect(script).toContain("package.json");
     expect(script).toContain("package-lock.json");
     expect(script).toContain("CHANGELOG.md");
-    expect(script).toContain("AGENTS.md");
-    expect(script).toContain("当前版本");
-    expect(script).toContain("最新提交");
-    expect(script).toContain("最新 tag");
+    expect(script).toContain("update-handoff.ps1");
     expect(script).toContain("release-verify.ps1");
     expect(script).toContain("git tag -a");
     expect(script).toContain("git push origin");
