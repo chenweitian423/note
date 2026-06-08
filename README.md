@@ -4,7 +4,7 @@
 
 ## 快速入口
 
-- 当前版本：`0.4.34`
+- 当前版本：`0.4.35`
 - 当前稳定版基线：`v0.4.26`
 - 更新日志：[CHANGELOG.md](./CHANGELOG.md)
 - 发布流程：[docs/release-process.md](./docs/release-process.md)
@@ -114,6 +114,12 @@ HOST=your-ssh-host rtk bash scripts/deploy-remote.sh
 chcp 65001
 ```
 
+本机 Windows Docker 验证建议复制一份 `.env.local.example` 为 `.env.local`，然后使用：
+```powershell
+docker compose -p online-notepad -f docker-compose.yml -f docker-compose.local.yml --env-file .env.local config
+docker compose -p online-notepad -f docker-compose.yml -f docker-compose.local.yml --env-file .env.local up -d --build
+```
+
 脚本会同步代码到 `/opt/online-notepad/app`，保留 `/opt/online-notepad/.env`，构建启动后自动检查 `/api/health`。镜像使用 Next.js standalone 输出构建，运行层只包含生产启动所需文件。
 
 部署脚本默认会拒绝脏工作区，避免把未提交改动同步到线上。确需临时部署未提交内容时，可以显式设置 `ALLOW_DIRTY_DEPLOY=1`。
@@ -154,7 +160,7 @@ chcp 65001
 npm run test
 npm run build
 npm run e2e
-docker compose config
+docker compose -f docker-compose.yml -f docker-compose.local.yml --env-file .env.local config
 ```
 
 ## 健康检查

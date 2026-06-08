@@ -2,6 +2,13 @@
 
 本项目使用语义化版本号。后续每次对 GitHub 发布新版本时，都先更新这里，再把对应版本内容复制到 GitHub Release 说明中。
 
+## 0.4.35 - 2026-06-08
+
+- 新增 `.env.local.example` 和 `docker-compose.local.yml`，为 Windows 本机 Docker 验证提供独立的本地覆盖配置，不再依赖手工构造 `/opt/online-notepad/.env` 映射路径。
+- 新增 `scripts/release-verify.ps1`，统一清理 `.next`、`.test-data`、`test-results` 后再按固定顺序执行 `test`、`e2e`、`build` 和本地 `docker compose config`。
+- `scripts/release.ps1` 接入 `release-verify.ps1`，并在发布前检查 `AGENTS.md` 中的“当前版本”“最新提交”“最新 tag”等交接字段，降低发布后本地交接信息遗漏的概率。
+- README 和 `docs/release-process.md` 同步补充本机 Docker 验证入口与新发布验证脚本说明，相关守护测试一并覆盖。
+
 ## 0.4.34 - 2026-06-08
 
 - 拆分 `NoteShell` 为入口壳层、`useNoteWorkspace` 状态层和 `NoteShellView` 渲染层，降低单文件复杂度并保留现有三栏笔记工作区行为。

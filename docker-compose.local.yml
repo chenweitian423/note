@@ -1,0 +1,6 @@
+services:
+  notepad:
+    env_file:
+      - .env.local
+    ports:
+      - "${APP_PORT:-31300}:3000"

@@ -17,6 +17,8 @@ describe("README deployment guide", () => {
     expect(readme).toContain("docker compose -p online-notepad logs -f");
     expect(readme).toContain("curl -fsS http://127.0.0.1:31300/api/health");
     expect(readme).toContain("scripts/deploy-remote.ps1");
+    expect(readme).toContain(".env.local.example");
+    expect(readme).toContain("docker-compose.local.yml");
     expect(readme).not.toContain(privateHostAlias);
     expect(readme).not.toContain(privateDeployScript);
     expect(readme).toContain("ALLOW_DIRTY_DEPLOY=1");

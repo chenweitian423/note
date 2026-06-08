@@ -67,7 +67,7 @@ test("backup deletion requires in-app confirmation", async ({ page }) => {
 });
 
 test("archive box restores notes and permanently deletes archived notes", async ({ page }) => {
-  const noteTitle = "Archive flow note";
+  const noteTitle = `Archive flow note ${Date.now()}`;
   let permanentDeleteRequests = 0;
   page.on("request", (request) => {
     if (request.method() === "POST" && request.url().includes("/api/notes/bulk") && request.postData()?.includes('"delete"')) {
@@ -100,6 +100,7 @@ test("archive box restores notes and permanently deletes archived notes", async 
   await page.locator(".topbar").getByRole("button", { name: "归档箱" }).click();
   await expect(page.getByText("归档箱：这些笔记没有删除，可恢复或永久删除。")).toBeVisible();
   await page.getByRole("button", { name: new RegExp(noteTitle) }).click();
+  await expect(page.getByRole("textbox", { name: "标题", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "恢复归档" }).click();
   await expect(page.getByRole("button", { name: new RegExp(noteTitle) })).toHaveCount(0);
 
@@ -110,6 +111,7 @@ test("archive box restores notes and permanently deletes archived notes", async 
   await page.getByRole("button", { name: "归档", exact: true }).click();
   await page.locator(".topbar").getByRole("button", { name: "归档箱" }).click();
   await page.getByRole("button", { name: new RegExp(noteTitle) }).click();
+  await expect(page.getByRole("textbox", { name: "标题", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "永久删除笔记" }).click();
   const confirmDialog = page.getByRole("dialog", { name: "确认删除笔记" });
   await expect(confirmDialog).toBeVisible();

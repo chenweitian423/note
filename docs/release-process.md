@@ -22,13 +22,10 @@
 5. 运行必要验证，例如：
 
 ```bash
-rtk npm run test
-rtk npm run e2e
-rtk npm run build
-rtk docker compose config
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release-verify.ps1
 ```
 
-如果是在 Windows Docker Desktop 上做本机 Docker 验证，先确认 Docker Desktop 已启动；必要时可使用仓库中的示例环境变量文件或等价配置，确保 `docker compose config` 与 `docker compose up -d --build` 可以读取到部署所需环境变量。
+如果是在 Windows Docker Desktop 上做本机 Docker 验证，先确认 Docker Desktop 已启动；必要时先把 `.env.local.example` 复制为 `.env.local`，再使用 `docker-compose.local.yml` 做 `config` 与 `up -d --build` 验证。
 
 Playwright E2E 发布验证固定使用官方镜像 `mcr.microsoft.com/playwright:v1.60.0-noble`。如果本机没有 Node/npm/docker，可按 `AGENTS.md` 约定使用远端 Docker 环境验证。
 
