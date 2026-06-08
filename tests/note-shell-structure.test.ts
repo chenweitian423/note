@@ -20,6 +20,10 @@ describe("note shell structure", () => {
       path.join(process.cwd(), "src/components/use-editor-actions.ts"),
       "utf8"
     );
+    const noteAutosaveHook = fs.readFileSync(
+      path.join(process.cwd(), "src/components/use-note-autosave.ts"),
+      "utf8"
+    );
     const workspaceToolbar = fs.readFileSync(
       path.join(process.cwd(), "src/components/workspace-toolbar.tsx"),
       "utf8"
@@ -54,7 +58,9 @@ describe("note shell structure", () => {
     expect(workspaceHook).toContain('from "./use-backup-manager"');
     expect(workspaceHook).toContain('from "./use-api-key-manager"');
     expect(workspaceHook).toContain('from "./use-editor-actions"');
+    expect(workspaceHook).toContain('from "./use-note-autosave"');
     expect(workspaceHook).not.toMatch(/\btype ImportPreview\s*=/);
+    expect(workspaceHook).not.toContain("window.setTimeout(async () =>");
     expect(workspaceHook).not.toMatch(/\basync function openBackupDialog\b/);
     expect(workspaceHook).not.toMatch(/\basync function loadBackups\b/);
     expect(workspaceHook).not.toMatch(/\basync function createBackupArchive\b/);
@@ -77,5 +83,7 @@ describe("note shell structure", () => {
     expect(editorActionsHook).toContain("export function useEditorActions");
     expect(editorActionsHook).toContain("function insertSnippet");
     expect(editorActionsHook).toContain("function insertCodeBlock");
+    expect(noteAutosaveHook).toContain("export function useNoteAutosave");
+    expect(noteAutosaveHook).toContain("window.setTimeout(async () =>");
   });
 });

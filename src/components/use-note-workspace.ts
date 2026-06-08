@@ -5,6 +5,7 @@ import { normalizeNote, type Note, type SaveState } from "./note-workspace-model
 import { useApiKeyManager } from "./use-api-key-manager";
 import { useBackupManager } from "./use-backup-manager";
 import { useEditorActions } from "./use-editor-actions";
+import { useNoteAutosave } from "./use-note-autosave";
 
 export function useNoteWorkspace() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -37,6 +38,15 @@ export function useNoteWorkspace() {
     setContent,
     textareaRef
   });
+  useNoteAutosave({
+    content,
+    dirtySinceSelect,
+    loadedSnapshot,
+    selectedId,
+    setNotes,
+    setSaveState,
+    title
+  });
 
   useEffect(() => {
     void loadNotes();
@@ -54,40 +64,6 @@ export function useNoteWorkspace() {
       setContent(selectedNote.content);
     }
   }, [selectedNote?.id]);
-
-  useEffect(() => {
-    if (!selectedId) return;
-    if (
-      loadedSnapshot.current?.id === selectedId &&
-      loadedSnapshot.current.title === title &&
-      loadedSnapshot.current.content === content
-    ) {
-      return;
-    }
-    setSaveState("saving");
-    const handle = window.setTimeout(async () => {
-      const response = await fetch(`/api/notes/${selectedId}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title, content })
-      });
-      if (!response.ok) {
-        setSaveState("error");
-        return;
-      }
-      const data = (await response.json()) as { note: Note };
-      const nextNote = normalizeNote(data.note);
-      loadedSnapshot.current = {
-        id: nextNote.id,
-        title: nextNote.title,
-        content: nextNote.content
-      };
-      dirtySinceSelect.current = false;
-      setNotes((current) => current.map((note) => (note.id === nextNote.id ? nextNote : note)));
-      setSaveState("saved");
-    }, 600);
-    return () => window.clearTimeout(handle);
-  }, [title, content, selectedId]);
 
   async function loadNotes(search = query, archivedMode = showArchived) {
     const requestId = ++notesRequestId.current;
