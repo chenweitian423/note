@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+function uniqueName(prefix: string) {
+  return `${prefix} ${test.info().parallelIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/");
   await page.getByLabel("访问密码").fill("E2ePassword123");
@@ -17,11 +21,12 @@ async function openBackupManager(page: import("@playwright/test").Page) {
 }
 
 test("login, create note, preview markdown, export", async ({ page }) => {
+  const noteTitle = uniqueName("E2E note");
   await login(page);
 
   await page.locator(".topbar").getByRole("button", { name: "新建笔记" }).click();
-  await page.getByRole("textbox", { name: "标题", exact: true }).fill("E2E note");
-  await page.getByRole("textbox", { name: "正文", exact: true }).fill("# E2E heading\n\n- Content");
+  await page.getByRole("textbox", { name: "标题", exact: true }).fill(noteTitle);
+  await page.getByRole("textbox", { name: "正文", exact: true }).fill(`# E2E heading\n\n- ${noteTitle}`);
   await expect(page.getByRole("heading", { name: "E2E heading" })).toBeVisible();
 
   const downloadPromise = page.waitForEvent("download");
@@ -67,7 +72,7 @@ test("backup deletion requires in-app confirmation", async ({ page }) => {
 });
 
 test("archive box restores notes and permanently deletes archived notes", async ({ page }) => {
-  const noteTitle = `Archive flow note ${Date.now()}`;
+  const noteTitle = uniqueName("Archive flow note");
   let permanentDeleteRequests = 0;
   page.on("request", (request) => {
     if (request.method() === "POST" && request.url().includes("/api/notes/bulk") && request.postData()?.includes('"delete"')) {
@@ -89,7 +94,7 @@ test("archive box restores notes and permanently deletes archived notes", async 
   });
   await titleInput.fill(noteTitle);
   await expect(titleInput).toHaveValue(noteTitle);
-  await page.getByRole("textbox", { name: "正文", exact: true }).fill("Archive flow content");
+  await page.getByRole("textbox", { name: "正文", exact: true }).fill(`Archive flow content ${noteTitle}`);
   await saveResponse;
   await expect(page.getByText("已保存")).toBeVisible({ timeout: 3000 });
   await expect(page.getByRole("button", { name: new RegExp(noteTitle) })).toBeVisible();

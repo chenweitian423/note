@@ -68,4 +68,14 @@ describe("release automation helpers", () => {
     expect(handoffScript).not.toContain("WriteAllLines");
     expect(handoffScript).not.toContain("Set-Content");
   });
+
+  it("keeps e2e-created note names unique across runs", () => {
+    const e2e = fs.readFileSync(path.join(process.cwd(), "tests/e2e/notepad.spec.ts"), "utf8");
+
+    expect(e2e).toContain("function uniqueName");
+    expect(e2e).toContain("uniqueName(\"E2E note\")");
+    expect(e2e).toContain("uniqueName(\"Archive flow note\")");
+    expect(e2e.match(/Date\.now\(\)/g)).toHaveLength(1);
+    expect(e2e).not.toContain('fill("E2E note")');
+  });
 });
