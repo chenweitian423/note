@@ -2,16 +2,22 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+function readComponentSources(files: string[]) {
+  return files.map((file) => fs.readFileSync(path.join(process.cwd(), file), "utf8")).join("\n");
+}
+
 describe("archive and note deletion ui", () => {
   it("exposes an archive box with restore and permanent delete actions", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-editor-pane.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-dialogs-panel.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-shell-view.tsx",
+      "src/components/note-sidebar.tsx",
+      "src/components/note-editor-pane.tsx",
+      "src/components/note-dialogs-panel.tsx",
+      "src/components/note-delete-dialog.tsx",
+      "src/components/workspace-toolbar.tsx",
+      "src/components/use-note-workspace.ts",
+      "src/components/use-note-collection.ts"
+    ]);
 
     expect(source).toContain("showArchived");
     expect(source).toContain("归档箱");
@@ -22,14 +28,16 @@ describe("archive and note deletion ui", () => {
     expect(source).toContain('params.set("archived", "true")');
     expect(source).toContain("/api/notes/bulk");
   });
+
   it("exposes multi-select bulk archive, restore, and permanent delete actions", () => {
-    const source = [
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-sidebar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/note-editor-pane.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/workspace-toolbar.tsx"), "utf8"),
-      fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8")
-    ].join("\n");
+    const source = readComponentSources([
+      "src/components/note-shell-view.tsx",
+      "src/components/note-sidebar.tsx",
+      "src/components/note-editor-pane.tsx",
+      "src/components/workspace-toolbar.tsx",
+      "src/components/use-note-workspace.ts",
+      "src/components/use-note-collection.ts"
+    ]);
 
     expect(source).toContain("selectedNoteIds");
     expect(source).toContain('aria-label={`选择 ${note.title}`}');

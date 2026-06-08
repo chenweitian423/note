@@ -1,3 +1,5 @@
+/* Theme and base elements */
+
 :root {
   color-scheme: light;
   --bg: #f6f7f4;
@@ -67,6 +69,8 @@ button:disabled {
   opacity: 0.6;
 }
 
+/* Login */
+
 .login-page {
   align-items: center;
   display: flex;
@@ -125,6 +129,8 @@ textarea:focus {
   margin: 0;
 }
 
+/* Workspace layout */
+
 .workspace {
   display: grid;
   grid-template-columns: 300px minmax(360px, 1fr) minmax(320px, 0.85fr);
@@ -174,6 +180,8 @@ textarea:focus {
 .backup-restore-action input {
   display: none;
 }
+
+/* Sidebar and note list */
 
 .note-list {
   display: grid;
@@ -252,6 +260,8 @@ textarea:focus {
   min-width: 46px;
 }
 
+/* Editor */
+
 .editor-pane {
   background: var(--panel);
   display: flex;
@@ -304,6 +314,8 @@ textarea {
   resize: none;
   width: 100%;
 }
+
+/* Preview and attachments */
 
 .preview-pane {
   background: #fbfaf7;
@@ -460,6 +472,8 @@ textarea {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* Dialogs */
 
 .modal-backdrop {
   align-items: center;
@@ -630,6 +644,8 @@ textarea {
   white-space: nowrap;
 }
 
+/* Empty states */
+
 .empty-state {
   align-items: center;
   display: flex;
@@ -643,6 +659,8 @@ textarea {
   width: auto;
   padding: 0 16px;
 }
+
+/* Responsive panes */
 
 .mobile-tabs {
   display: none;

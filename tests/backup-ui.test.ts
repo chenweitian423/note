@@ -9,6 +9,7 @@ function readComponentSources(files: string[]) {
 describe("backup manager ui", () => {
   it("exposes a backup zip restore upload entry", () => {
     const source = readComponentSources([
+      "src/components/backup-dialogs.tsx",
       "src/components/note-dialogs-panel.tsx",
       "src/components/note-preview-pane.tsx",
       "src/components/use-note-workspace.ts"
@@ -20,6 +21,7 @@ describe("backup manager ui", () => {
 
   it("exposes backup deletion and keeps the topbar focused", () => {
     const source = readComponentSources([
+      "src/components/backup-dialogs.tsx",
       "src/components/note-dialogs-panel.tsx",
       "src/components/workspace-toolbar.tsx"
     ]);
@@ -46,10 +48,13 @@ describe("backup manager ui", () => {
 
   it("uses an in-app delete confirmation instead of the browser confirm dialog", () => {
     const source = readComponentSources([
+      "src/components/backup-dialogs.tsx",
+      "src/components/note-delete-dialog.tsx",
       "src/components/note-dialogs-panel.tsx",
       "src/components/note-preview-pane.tsx",
       "src/components/note-sidebar.tsx",
       "src/components/workspace-toolbar.tsx",
+      "src/components/use-note-collection.ts",
       "src/components/use-note-workspace.ts"
     ]);
 
@@ -62,6 +67,7 @@ describe("backup manager ui", () => {
 
   it("shows backup statistics in the backup manager", () => {
     const source = readComponentSources([
+      "src/components/backup-dialogs.tsx",
       "src/components/note-dialogs-panel.tsx",
       "src/components/use-backup-manager.ts",
       "src/components/use-note-workspace.ts"
@@ -77,6 +83,7 @@ describe("backup manager ui", () => {
 
   it("shows auto backup status in the backup manager", () => {
     const source = readComponentSources([
+      "src/components/backup-dialogs.tsx",
       "src/components/note-dialogs-panel.tsx",
       "src/components/use-backup-manager.ts",
       "src/components/use-note-workspace.ts"
@@ -91,6 +98,7 @@ describe("backup manager ui", () => {
 
   it("previews zip imports before confirming restore", () => {
     const source = readComponentSources([
+      "src/components/backup-dialogs.tsx",
       "src/components/note-dialogs-panel.tsx",
       "src/components/use-backup-manager.ts",
       "src/components/use-note-workspace.ts"
@@ -105,6 +113,7 @@ describe("backup manager ui", () => {
 
   it("exposes backup verification in the backup manager", () => {
     const source = readComponentSources([
+      "src/components/backup-dialogs.tsx",
       "src/components/note-dialogs-panel.tsx",
       "src/components/use-backup-manager.ts",
       "src/components/use-note-workspace.ts"
@@ -118,10 +127,14 @@ describe("backup manager ui", () => {
 
   it("keeps common Chinese UI labels readable", () => {
     const source = readComponentSources([
+      "src/components/api-key-dialog.tsx",
+      "src/components/backup-dialogs.tsx",
+      "src/components/settings-dialog.tsx",
       "src/components/note-dialogs-panel.tsx",
       "src/components/note-sidebar.tsx",
       "src/components/note-preview-pane.tsx",
       "src/components/workspace-toolbar.tsx",
+      "src/components/use-note-collection.ts",
       "src/components/use-note-workspace.ts"
     ]);
 
@@ -129,6 +142,6 @@ describe("backup manager ui", () => {
     expect(source).toContain("搜索标题或正文");
     expect(source).toContain("开始记录");
     expect(source).toContain("上传附件");
-    expect(source).not.toMatch(/[€�]/);
+    expect(source).not.toMatch(/[\u20ac\ufffd]/);
   });
 });

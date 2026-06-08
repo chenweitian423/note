@@ -24,6 +24,10 @@ describe("note shell structure", () => {
       path.join(process.cwd(), "src/components/use-note-autosave.ts"),
       "utf8"
     );
+    const noteCollectionHook = fs.readFileSync(
+      path.join(process.cwd(), "src/components/use-note-collection.ts"),
+      "utf8"
+    );
     const workspaceToolbar = fs.readFileSync(
       path.join(process.cwd(), "src/components/workspace-toolbar.tsx"),
       "utf8"
@@ -35,6 +39,10 @@ describe("note shell structure", () => {
       path.join(process.cwd(), "src/components/note-dialogs-panel.tsx"),
       "utf8"
     );
+    const backupDialogs = fs.readFileSync(path.join(process.cwd(), "src/components/backup-dialogs.tsx"), "utf8");
+    const settingsDialog = fs.readFileSync(path.join(process.cwd(), "src/components/settings-dialog.tsx"), "utf8");
+    const apiKeyDialog = fs.readFileSync(path.join(process.cwd(), "src/components/api-key-dialog.tsx"), "utf8");
+    const noteDeleteDialog = fs.readFileSync(path.join(process.cwd(), "src/components/note-delete-dialog.tsx"), "utf8");
 
     expect(noteShell).toContain('from "./use-note-workspace"');
     expect(noteShell).toContain('from "./note-shell-view"');
@@ -45,13 +53,22 @@ describe("note shell structure", () => {
     expect(noteShellView).toContain('from "./note-editor-pane"');
     expect(noteShellView).toContain('from "./note-preview-pane"');
     expect(noteShellView).toContain('from "./note-dialogs-panel"');
-    expect(noteDialogsPanel).toContain('from "./note-shell-dialogs"');
+    expect(noteDeleteDialog).toContain('from "./note-shell-dialogs"');
     expect(noteSidebar).toContain('from "./workspace-toolbar"');
     expect(workspaceToolbar).toContain("export function WorkspaceToolbar");
     expect(noteSidebar).toContain("export function NoteSidebar");
     expect(noteEditorPane).toContain("export function NoteEditorPane");
     expect(notePreviewPane).toContain("export function NotePreviewPane");
     expect(noteDialogsPanel).toContain("export function NoteDialogsPanel");
+    expect(noteDialogsPanel).toContain("BackupDialogs");
+    expect(noteDialogsPanel).toContain("SettingsDialog");
+    expect(noteDialogsPanel).toContain("ApiKeyDialog");
+    expect(noteDialogsPanel).toContain("NoteDeleteDialog");
+    expect(noteDialogsPanel).not.toContain("role=\"dialog\"");
+    expect(backupDialogs).toContain("export function BackupDialogs");
+    expect(settingsDialog).toContain("export function SettingsDialog");
+    expect(apiKeyDialog).toContain("export function ApiKeyDialog");
+    expect(noteDeleteDialog).toContain("export function NoteDeleteDialog");
     expect(noteShellView).not.toContain("backupDialogOpen");
     expect(noteShellView).not.toContain("apiKeyDialogOpen");
     expect(workspaceHook).toContain('from "./note-workspace-model"');
@@ -59,8 +76,12 @@ describe("note shell structure", () => {
     expect(workspaceHook).toContain('from "./use-api-key-manager"');
     expect(workspaceHook).toContain('from "./use-editor-actions"');
     expect(workspaceHook).toContain('from "./use-note-autosave"');
+    expect(workspaceHook).toContain('from "./use-note-collection"');
     expect(workspaceHook).not.toMatch(/\btype ImportPreview\s*=/);
     expect(workspaceHook).not.toContain("window.setTimeout(async () =>");
+    expect(workspaceHook).not.toMatch(/\basync function loadNotes\b/);
+    expect(workspaceHook).not.toMatch(/\basync function createNewNote\b/);
+    expect(workspaceHook).not.toMatch(/\basync function runBulkNoteAction\b/);
     expect(workspaceHook).not.toMatch(/\basync function openBackupDialog\b/);
     expect(workspaceHook).not.toMatch(/\basync function loadBackups\b/);
     expect(workspaceHook).not.toMatch(/\basync function createBackupArchive\b/);
@@ -85,5 +106,8 @@ describe("note shell structure", () => {
     expect(editorActionsHook).toContain("function insertCodeBlock");
     expect(noteAutosaveHook).toContain("export function useNoteAutosave");
     expect(noteAutosaveHook).toContain("window.setTimeout(async () =>");
+    expect(noteCollectionHook).toContain("export function useNoteCollection");
+    expect(noteCollectionHook).toContain("async function loadNotes");
+    expect(noteCollectionHook).toContain("async function runBulkNoteAction");
   });
 });
