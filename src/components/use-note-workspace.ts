@@ -258,6 +258,7 @@ export function useNoteWorkspace() {
 
   function selectNote(note: Note) {
     setSelectedId(note.id);
+    setActiveMobilePane("editor");
     const url = new URL(window.location.href);
     url.searchParams.set("note", note.noteNumber);
     window.history.replaceState(null, "", url.toString());
