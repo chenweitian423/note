@@ -6,6 +6,8 @@ describe("note shell structure", () => {
   it("keeps the page shell focused by delegating state and dialogs to extracted modules", () => {
     const noteShell = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell.tsx"), "utf8");
     const noteShellView = fs.readFileSync(path.join(process.cwd(), "src/components/note-shell-view.tsx"), "utf8");
+    const workspaceHook = fs.readFileSync(path.join(process.cwd(), "src/components/use-note-workspace.ts"), "utf8");
+    const workspaceModel = fs.readFileSync(path.join(process.cwd(), "src/components/note-workspace-model.ts"), "utf8");
     const workspaceToolbar = fs.readFileSync(
       path.join(process.cwd(), "src/components/workspace-toolbar.tsx"),
       "utf8"
@@ -36,5 +38,11 @@ describe("note shell structure", () => {
     expect(noteDialogsPanel).toContain("export function NoteDialogsPanel");
     expect(noteShellView).not.toContain("backupDialogOpen");
     expect(noteShellView).not.toContain("apiKeyDialogOpen");
+    expect(workspaceHook).toContain('from "./note-workspace-model"');
+    expect(workspaceHook).not.toMatch(/\btype ImportPreview\s*=/);
+    expect(workspaceModel).toContain("export type ImportPreview");
+    expect(workspaceModel).toContain("export function normalizeNote");
+    expect(workspaceModel).toContain("export function withoutSecret");
+    expect(workspaceModel).toContain("export function summarizeBackupList");
   });
 });
